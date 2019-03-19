@@ -2,7 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 
-const api = require('./api');
+const api = require('./src/api');
 
 const {
   PORT: port = 3000,
