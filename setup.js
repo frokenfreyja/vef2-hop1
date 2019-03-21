@@ -3,7 +3,7 @@ require('dotenv').config();
 const fs = require('fs');
 const util = require('util');
 
-const { query } = require('./db');
+const { query } = require('./src/db');
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -15,16 +15,20 @@ const readFileAsync = util.promisify(fs.readFile);
 async function main() {
   console.info(`Set upp gagnagrunn á ${connectionString}`);
   // droppa töflum ef til
-  await query('DROP TABLE IF EXISTS project');
+  await query('DROP TABLE IF EXISTS categories cascade');
+  await query('DROP TABLE IF EXISTS products cascade');
+  await query('DROP TABLE IF EXISTS users cascade');
+  await query('DROP TABLE IF EXISTS orders cascade');
+  await query('DROP TABLE IF EXISTS cart_products cascade');
   console.info('Töflu eytt');
 
   // búa til töflur út frá skema
   try {
     const createTable = await readFileAsync('./schema.sql');
     await query(createTable.toString('utf8'));
-    console.info('Tafla búin til');
+    console.info('Töflur búnar til');
   } catch (e) {
-    console.error('Villa við að búa til töflu:', e.message);
+    console.error('Villa við að búa til töflur:', e.message);
     return;
   }
 
