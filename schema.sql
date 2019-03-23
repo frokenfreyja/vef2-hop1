@@ -17,7 +17,8 @@ CREATE TABLE products (
 CREATE TABLE users (
   userid serial primary key, 
   username varchar(128) not null unique,
-  password varchar(128) not null,
+  email varchar(128) not null unique,
+  password character varying(255) NOT NULL,
   admin boolean default false
 );
 
