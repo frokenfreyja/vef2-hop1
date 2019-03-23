@@ -1,4 +1,4 @@
 INSERT INTO users
-(username, password, admin)
+(username, email, password, admin)
 VALUES
-('admin', '$2y$12$gQ9tOvPh5khXAYww0Xdxy.k7AmRgqFRjp06Wo9ID7Rgind4v5l6ba', true);
+('admin', 'admin@admin.is', '$2y$12$gQ9tOvPh5khXAYww0Xdxy.k7AmRgqFRjp06Wo9ID7Rgind4v5l6ba', true);
