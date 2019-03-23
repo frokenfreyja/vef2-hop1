@@ -77,6 +77,52 @@ async function comparePasswords(password, hash) {
   return result;
 }
 
+/**
+ * Athugar hvort að inntak sé tómt(null eða false)
+ *
+ * @param {*} s Sá parameter sem á að athuga
+ */
+function isEmpty(s) {
+  return s == null && !s;
+}
+
+
+async function updateToAdmin(id, item) {
+  const q = 'SELECT * FROM users WHERE userid=$1';
+  const found = await query(q, [id]);
+
+  // Ef það er enginn user með þetta id til
+  if (found.rows.length === 0) {
+    return {
+      success: false,
+      notFound: true,
+    };
+  }
+
+  if (!isEmpty(item.admin)) {
+    if (typeof item.admin !== 'boolean') {
+      return {
+        success: false,
+        notFound: false,
+      };
+    }
+  }
+
+  const p = `
+    UPDATE users
+    SET admin = $2
+    WHERE userid = $1
+    RETURNING userid, username, email, admin`;
+
+  const updateResult = await query(p, [id, item.admin]);
+
+
+  return {
+    success: true,
+    notFound: false,
+    item: updateResult.rows[0],
+  };
+}
 
 module.exports = {
   listOfUsers,
@@ -85,4 +131,5 @@ module.exports = {
   findByEmail,
   getSingleUser,
   comparePasswords,
+  updateToAdmin,
 };
