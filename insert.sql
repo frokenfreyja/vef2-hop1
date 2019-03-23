@@ -1,4 +1,9 @@
 INSERT INTO users
-(username, password, admin)
+(username, email, password, admin)
 VALUES
-('admin', '$2y$12$gQ9tOvPh5khXAYww0Xdxy.k7AmRgqFRjp06Wo9ID7Rgind4v5l6ba', true);
+('admin', 'admin@admin.is', '$2a$04$7aaQvd6IRTvxp2Rbz.kpP.zaQMJ8k2HesjH7IHLrxqX6UWSPJ.Opu', true);
+
+INSERT INTO users
+(username, email, password, admin)
+VALUES
+('user', 'user@user.is', '$2a$04$7aaQvd6IRTvxp2Rbz.kpP.zaQMJ8k2HesjH7IHLrxqX6UWSPJ.Opu', false);
