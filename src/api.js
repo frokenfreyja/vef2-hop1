@@ -1,5 +1,6 @@
 const express = require('express');
 
+const { productsRoute } = require('./products');
 const { catchErrors, requireAuthenticationAsAdmin } = require('../utils');
 const { listOfUsers, getSingleUser, updateToAdmin } = require('./users');
 
@@ -81,5 +82,7 @@ router.get('/', listOfUrls);
 router.get('/users/', requireAuthenticationAsAdmin, catchErrors(getUsers));
 router.get('/users/:id', requireAuthenticationAsAdmin, catchErrors(getUser));
 router.patch('/users/:id', requireAuthenticationAsAdmin, catchErrors(makeUserAdmin));
+
+router.get('/products', catchErrors(productsRoute));
 
 module.exports = router;

@@ -28,7 +28,17 @@ async function query(sqlQuery, values = []) {
   return result;
 }
 
+async function getProducts(sqlQuery) {
+  const pagedQuery = `${sqlQuery}`;
+  const result = await query(pagedQuery);
+
+  return {
+    products: result.rows,
+  };
+}
+
 
 module.exports = {
   query,
+  getProducts,
 };
