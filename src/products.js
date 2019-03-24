@@ -1,5 +1,6 @@
 const xss = require('xss');
 const { query, paged, conditionalUpdate } = require('./db');
+const { validateProduct } = require('../validation');
 
 async function categoriesRoute(req, res) {
   const categories = await paged('SELECT * FROM categories');
@@ -139,11 +140,51 @@ async function productRoute(req, res) {
   return res.json(product.rows[0]);
 }
 
-/*
+
 async function productPatchRoute(req, res) {
-  const validationMessage = await
+  const { id } = req.params;
+
+  if (!Number.isInteger(Number(id))) {
+    return res.status(404).json({ error: 'Product not found' });
+  }
+
+  const product = await query('SELECT * FROM products WHERE id = $1', [id]);
+
+  if (product.rows.length === 0) {
+    return res.status(404).json({ error: 'Product not found' });
+  }
+
+  const validationMessage = await validateProduct(req.body, id, true);
+
+  if (validationMessage.length > 0) {
+    return res.status(400).json({ errors: validationMessage });
+  }
+
+  const isset = f => typeof f === 'string' || typeof f === 'number';
+
+  const fields = [
+    isset(req.body.title) ? 'title' : null,
+    isset(req.body.price) ? 'price' : null,
+    isset(req.body.description) ? 'description' : null,
+    isset(req.body.category) ? 'category' : null,
+  ];
+
+  const values = [
+    isset(req.body.title) ? xss(req.body.title) : null,
+    isset(req.body.price) ? xss(req.body.price) : null,
+    isset(req.body.description) ? xss(req.body.description) : null,
+    isset(req.body.category) ? xss(req.body.category) : null,
+  ];
+
+  const result = await conditionalUpdate('products', id, fields, values);
+
+  if (!result) {
+    return res.status(400).json({ error: 'Nothing to patch' });
+  }
+
+  return res.status(201).json(result.rows[0]);
 }
-*/
+
 
 async function productDeleteRoute(req, res) {
   const { id } = req.params;
@@ -168,5 +209,6 @@ module.exports = {
   categoriesDeleteRoute,
   productsRoute,
   productRoute,
+  productPatchRoute,
   productDeleteRoute,
 };

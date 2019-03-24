@@ -7,6 +7,7 @@ const {
   categoriesDeleteRoute,
   productsRoute,
   productRoute,
+  productPatchRoute,
   productDeleteRoute,
 } = require('./products');
 
@@ -98,7 +99,9 @@ router.patch('/categories/:id', requireAuthenticationAsAdmin, catchErrors(catego
 router.delete('/categories/:id', requireAuthenticationAsAdmin, catchErrors(categoriesDeleteRoute));
 
 router.get('/products', catchErrors(productsRoute));
+
 router.get('/products/:id', catchErrors(productRoute));
+router.patch('/products/:id', requireAuthenticationAsAdmin, catchErrors(productPatchRoute));
 router.delete('/products/:id', requireAuthenticationAsAdmin, catchErrors(productDeleteRoute));
 
 module.exports = router;

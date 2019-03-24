@@ -5,7 +5,7 @@ CREATE TABLE categories (
 
 CREATE TABLE products (
   id serial primary key,
-  title varchar(128) not null unique,
+  title character varying(255) not null unique,
   price int not null,
   description text not null,
   image character varying(255),
