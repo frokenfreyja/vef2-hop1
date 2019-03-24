@@ -13,7 +13,17 @@ INSERT INTO categories
 VALUES 
 ('clothing');
 
+INSERT INTO categories 
+(title)
+VALUES 
+('food');
+
 INSERT INTO products
-(title, price, description, category)
+(title, price, description, categoryid)
 VALUES
 ('Cool jeans', 500, 'Very nice jeans', 1);
+
+INSERT INTO products
+(title, price, description, categoryid)
+VALUES
+('Vegan meatballs', 1000, 'Swedish vegan meatballs', 2);
