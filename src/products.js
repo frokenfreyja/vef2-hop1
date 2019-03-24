@@ -1,6 +1,5 @@
 const xss = require('xss');
-const { query, paged, conditionalUpdate } = require('./db');
-const { validateProduct } = require('../validation');
+const { query, paged, createProduct, updateProduct, updateCategory } = require('./db');
 
 async function categoriesRoute(req, res) {
   const categories = await paged('SELECT * FROM categories');
@@ -33,29 +32,19 @@ async function categoriesPostRoute(req, res) {
 
 async function categoriesPatchRoute(req, res) {
   const { id } = req.params;
+  const { title } = req.body;
 
-  if (!Number.isInteger(Number(id))) {
+  const result = await updateCategory(id, { title });
+
+  if (!result.success && result.validation.length > 0) {
+    return res.status(400).json(result.validation);
+  }
+
+  if (!result.success && result.notFound) {
     return res.status(404).json({ error: 'Category not found' });
   }
 
-  const category = await query('SELECT * FROM categories WHERE id = $1', [id]);
-
-  if (category.rows.length === 0) {
-    return res.status(404).json({ error: 'Category not found' });
-  }
-
-  const isset = f => typeof f === 'number';
-
-  const field = isset(req.body.category) ? 'category' : null;
-
-  const value = isset(req.body.category) ? xss(req.body.category) : null;
-  const result = await conditionalUpdate('categories', id, field, value);
-
-  if (!result) {
-    return res.status(400).json({ error: 'Nothing to patch' });
-  }
-
-  return res.status(201).json(result.rows[0]);
+  return res.status(201).json(result.item);
 }
 
 async function categoriesDeleteRoute(req, res) {
@@ -65,7 +54,7 @@ async function categoriesDeleteRoute(req, res) {
     return res.status(404).json({ error: 'Category not found' });
   }
 
-  const del = await query('DELETE FROM categories WHERE id = $1', [id]);
+  const del = await query('DELETE FROM categories WHERE categoryid = $1', [id]);
 
   if (del.rowCount === 1) {
     return res.status(204).json({});
@@ -81,7 +70,7 @@ async function productsRoute(req, res) {
     SELECT 
       products.*, categories.title AS categoryTitle
     FROM products
-    LEFT JOIN categories ON products.category = categories.id
+    LEFT JOIN categories ON products.categoryid = categories.categoryid
     ORDER BY created DESC
   `;
   const values = [];
@@ -112,28 +101,40 @@ async function productsRoute(req, res) {
   return res.json(products);
 }
 
-/* ------------ VANTAR IMAGE ------------- */
+/* ------------ VANTAR IMAGE+CATEGORY ------------- */
 async function productsPostRoute(req, res) {
-  const validationMessage = await validateProduct(req.body);
+  const { title, price, description, categoryid } = req.body;
 
-  if (validationMessage.length > 0) {
-    return res.status(400).json({ errors: validationMessage });
+  if (typeof title !== 'string' || title.length === 0 || title.length > 255) {
+    const message = 'Title is required, must not be empty or longar than 255 characters';
+    return res.status(400).json({
+      errors: [{ field: 'title', message }],
+    });
   }
 
-  const q = `INSERT INTO products
-    (title, price, description, category)
-    VALUES
-    ($1, $2, $3, $4)
-    RETURNING *`;
+  if (typeof price !== 'number') {
+    const message = 'Price is required and must be a number';
+    return res.status(400).json({
+      errors: [{ field: 'price', message }],
+    });
+  }
 
-  const data = [
-    xss(req.body.title),
-    xss(req.body.price),
-    xss(req.body.description),
-    Number(xss(req.body.category)),
-  ];
+  if (typeof description !== 'string') {
+    const message = 'Description is required and must be a text';
+    return res.status(400).json({
+      errors: [{ field: 'description', message }],
+    });
+  }
 
-  const result = await query(q, data);
+  if (typeof categoryid !== 'number') {
+    const message = 'CategoryId is required and must be a number';
+    return res.status(400).json({
+      errors: [{ field: 'CategoryId', message }],
+    });
+  }
+
+  const q = 'INSERT INTO products (title, price, description, categoryid) VALUES ($1, $2, $3, $4) RETURNING *';
+  const result = await query(q, [xss(title),xss(price),xss(description), xss(categoryid)]);
 
   return res.status(201).json(result.rows[0]);
 }
@@ -149,8 +150,8 @@ async function productRoute(req, res) {
     SELECT
       products.*, categories.title AS categoryTitle
     FROM products
-    LEFT JOIN categories on products.category = categories.id
-    WHERE products.id = $1
+    LEFT JOIN categories on products.categoryid = categories.categoryid
+    WHERE products.productid = $1
   `, [id]);
 
   if (product.rows.length === 0) {
@@ -160,49 +161,21 @@ async function productRoute(req, res) {
   return res.json(product.rows[0]);
 }
 
-
 async function productPatchRoute(req, res) {
   const { id } = req.params;
+  const { title, price, description, categoryid } = req.body;
 
-  if (!Number.isInteger(Number(id))) {
+  const result = await updateProduct(id, { title, price, description, categoryid });
+
+  if (!result.success && result.validation.length > 0) {
+    return res.status(400).json(result.validation);
+  }
+
+  if (!result.success && result.notFound) {
     return res.status(404).json({ error: 'Product not found' });
   }
 
-  const product = await query('SELECT * FROM products WHERE id = $1', [id]);
-
-  if (product.rows.length === 0) {
-    return res.status(404).json({ error: 'Product not found' });
-  }
-
-  const validationMessage = await validateProduct(req.body, id, true);
-
-  if (validationMessage.length > 0) {
-    return res.status(400).json({ errors: validationMessage });
-  }
-
-  const isset = f => typeof f === 'string' || typeof f === 'number';
-
-  const fields = [
-    isset(req.body.title) ? 'title' : null,
-    isset(req.body.price) ? 'price' : null,
-    isset(req.body.description) ? 'description' : null,
-    isset(req.body.category) ? 'category' : null,
-  ];
-
-  const values = [
-    isset(req.body.title) ? xss(req.body.title) : null,
-    isset(req.body.price) ? xss(req.body.price) : null,
-    isset(req.body.description) ? xss(req.body.description) : null,
-    isset(req.body.category) ? xss(req.body.category) : null,
-  ];
-
-  const result = await conditionalUpdate('products', id, fields, values);
-
-  if (!result) {
-    return res.status(400).json({ error: 'Nothing to patch' });
-  }
-
-  return res.status(201).json(result.rows[0]);
+  return res.status(201).json(result.item);
 }
 
 
@@ -213,7 +186,7 @@ async function productDeleteRoute(req, res) {
     return res.status(404).json({ error: 'Product not found' });
   }
 
-  const del = await query('DELETE FROM products WHERE id = $1', [id]);
+  const del = await query('DELETE FROM products WHERE productid = $1', [id]);
 
   if (del.rowCount === 1) {
     return res.status(204).json({});
