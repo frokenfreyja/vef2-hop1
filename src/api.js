@@ -6,6 +6,7 @@ const {
   categoriesPatchRoute,
   categoriesDeleteRoute,
   productsRoute,
+  productsPostRoute,
   productRoute,
   productPatchRoute,
   productDeleteRoute,
@@ -99,6 +100,7 @@ router.patch('/categories/:id', requireAuthenticationAsAdmin, catchErrors(catego
 router.delete('/categories/:id', requireAuthenticationAsAdmin, catchErrors(categoriesDeleteRoute));
 
 router.get('/products', catchErrors(productsRoute));
+router.post('/products', requireAuthenticationAsAdmin, catchErrors(productsPostRoute));
 
 router.get('/products/:id', catchErrors(productRoute));
 router.patch('/products/:id', requireAuthenticationAsAdmin, catchErrors(productPatchRoute));

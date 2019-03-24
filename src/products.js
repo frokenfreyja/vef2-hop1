@@ -112,11 +112,31 @@ async function productsRoute(req, res) {
   return res.json(products);
 }
 
-/*
+/* ------------ VANTAR IMAGE ------------- */
 async function productsPostRoute(req, res) {
-  const validationMessage = await 
+  const validationMessage = await validateProduct(req.body);
+
+  if (validationMessage.length > 0) {
+    return res.status(400).json({ errors: validationMessage });
+  }
+
+  const q = `INSERT INTO products
+    (title, price, description, category)
+    VALUES
+    ($1, $2, $3, $4)
+    RETURNING *`;
+
+  const data = [
+    xss(req.body.title),
+    xss(req.body.price),
+    xss(req.body.description),
+    Number(xss(req.body.category)),
+  ];
+
+  const result = await query(q, data);
+
+  return res.status(201).json(result.rows[0]);
 }
-*/
 
 async function productRoute(req, res) {
   const { id } = req.params;
@@ -208,6 +228,7 @@ module.exports = {
   categoriesPatchRoute,
   categoriesDeleteRoute,
   productsRoute,
+  productsPostRoute,
   productRoute,
   productPatchRoute,
   productDeleteRoute,
