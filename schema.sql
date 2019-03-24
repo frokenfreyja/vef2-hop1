@@ -1,6 +1,6 @@
 CREATE TABLE categories (
   id serial primary key,
-  title varchar(128) not null unique
+  title character variying(255) not null unique
 );
 
 CREATE TABLE products (
