@@ -74,7 +74,7 @@ async function categoriesDeleteRoute(req, res) {
 }
 
 async function productsRoute(req, res) {
-  const { search = '' } = req.query;
+  const { search, category } = req.query;
 
   let q = `
     SELECT 
@@ -96,6 +96,17 @@ async function productsRoute(req, res) {
     `;
     values.push(search);
   }
+
+  if (typeof category === 'number' && category !== '') {
+    q = `
+      SELECT * FROM products
+      WHERE
+        to_tsvector('english', category) @@ plainto_tsquery('english', $1)
+      ORDER BY created DESC
+    `;
+    values.push(category);
+  }
+
   const products = await paged(q, { values });
   return res.json(products);
 }
@@ -106,10 +117,56 @@ async function productsPostRoute(req, res) {
 }
 */
 
+async function productRoute(req, res) {
+  const { id } = req.params;
+
+  if (!Number.isInteger(Number(id))) {
+    return res.status(404).json({ error: 'Product not found' });
+  }
+
+  const product = await query(`
+    SELECT
+      products.*, categories.title AS categoryTitle
+    FROM products
+    LEFT JOIN categories on products.category = categories.id
+    WHERE products.id = $1
+  `, [id]);
+
+  if (product.rows.length === 0) {
+    return res.status(404).json({ error: 'Product not found' });
+  }
+
+  return res.json(product.rows[0]);
+}
+
+/*
+async function productPatchRoute(req, res) {
+  const validationMessage = await
+}
+*/
+
+async function productDeleteRoute(req, res) {
+  const { id } = req.params;
+
+  if (!Number.isInteger(Number(id))) {
+    return res.status(404).json({ error: 'Product not found' });
+  }
+
+  const del = await query('DELETE FROM products WHERE id = $1', [id]);
+
+  if (del.rowCount === 1) {
+    return res.status(204).json({});
+  }
+
+  return res.status(404).json({ error: 'Product not found' });
+}
+
 module.exports = {
   categoriesRoute,
   categoriesPostRoute,
   categoriesPatchRoute,
   categoriesDeleteRoute,
   productsRoute,
+  productRoute,
+  productDeleteRoute,
 };
