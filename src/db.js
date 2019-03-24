@@ -28,7 +28,7 @@ async function query(sqlQuery, values = []) {
   return result;
 }
 
-async function getProducts(sqlQuery) {
+async function paged(sqlQuery) {
   const pagedQuery = `${sqlQuery}`;
   const result = await query(pagedQuery);
 
@@ -40,5 +40,5 @@ async function getProducts(sqlQuery) {
 
 module.exports = {
   query,
-  getProducts,
+  paged,
 };
