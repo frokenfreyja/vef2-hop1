@@ -1,6 +1,13 @@
 const express = require('express');
 
-const { categoriesRoute, categoriesPostRoute, productsRoute } = require('./products');
+const {
+  categoriesRoute,
+  categoriesPostRoute,
+  categoriesPatchRoute,
+  categoriesDeleteRoute,
+  productsRoute,
+} = require('./products');
+
 const { catchErrors, requireAuthenticationAsAdmin } = require('../utils');
 const { listOfUsers, getSingleUser, updateToAdmin } = require('./users');
 
@@ -85,6 +92,9 @@ router.patch('/users/:id', requireAuthenticationAsAdmin, catchErrors(makeUserAdm
 
 router.get('/categories', catchErrors(categoriesRoute));
 router.post('/categories', requireAuthenticationAsAdmin, catchErrors(categoriesPostRoute));
+router.patch('/categories/:id', requireAuthenticationAsAdmin, catchErrors(categoriesPatchRoute));
+router.delete('/categories/:id', requireAuthenticationAsAdmin, catchErrors(categoriesDeleteRoute));
+
 router.get('/products', catchErrors(productsRoute));
 
 module.exports = router;

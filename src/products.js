@@ -1,5 +1,5 @@
 const xss = require('xss');
-const { query, paged } = require('./db');
+const { query, paged, conditionalUpdate } = require('./db');
 
 async function categoriesRoute(req, res) {
   const categories = await paged('SELECT * FROM categories');
@@ -28,6 +28,49 @@ async function categoriesPostRoute(req, res) {
   const result = await query(q, [xss(title)]);
 
   return res.status(201).json(result.rows[0]);
+}
+
+async function categoriesPatchRoute(req, res) {
+  const { id } = req.params;
+
+  if (!Number.isInteger(Number(id))) {
+    return res.status(404).json({ error: 'Category not found' });
+  }
+
+  const category = await query('SELECT * FROM categories WHERE id = $1', [id]);
+
+  if (category.rows.length === 0) {
+    return res.status(404).json({ error: 'Category not found' });
+  }
+
+  const isset = f => typeof f === 'number';
+
+  const field = isset(req.body.category) ? 'category' : null;
+
+  const value = isset(req.body.category) ? xss(req.body.category) : null;
+  const result = await conditionalUpdate('categories', id, field, value);
+
+  if (!result) {
+    return res.status(400).json({ error: 'Nothing to patch' });
+  }
+
+  return res.status(201).json(result.rows[0]);
+}
+
+async function categoriesDeleteRoute(req, res) {
+  const { id } = req.params;
+
+  if (!Number.isInteger(Number(id))) {
+    return res.status(404).json({ error: 'Category not found' });
+  }
+
+  const del = await query('DELETE FROM categories WHERE id = $1', [id]);
+
+  if (del.rowCount === 1) {
+    return res.status(204).json({});
+  }
+
+  return res.status(404).json({ error: 'Category not found' });
 }
 
 async function productsRoute(req, res) {
@@ -66,5 +109,7 @@ async function productsPostRoute(req, res) {
 module.exports = {
   categoriesRoute,
   categoriesPostRoute,
+  categoriesPatchRoute,
+  categoriesDeleteRoute,
   productsRoute,
 };
