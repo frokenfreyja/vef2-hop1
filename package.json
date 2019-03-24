@@ -2,13 +2,13 @@
     "name": "vef2-hop1",
     "version": "1.0.0",
     "description": "Hópverkefni 1",
-    "main": "index.js",
+    "main": "app.js",
     "scripts": {
         "dev": "nodemon app.js",
         "start": "node app.js",
         "eslint": "eslint *.js",
         "test": "npm run eslint",
-        "setup": "node setup.js"
+        "setup": "node setup.js",
     },
     "keywords": [],
     "author": "",

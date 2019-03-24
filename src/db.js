@@ -1,4 +1,5 @@
 const { Client } = require('pg');
+
 const xss = require('xss');
 const { validateCategory, validateProduct } = require('../validation');
 

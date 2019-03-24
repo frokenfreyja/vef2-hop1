@@ -106,4 +106,5 @@ router.get('/products/:id', catchErrors(productRoute));
 router.patch('/products/:id', requireAuthenticationAsAdmin, catchErrors(productPatchRoute));
 router.delete('/products/:id', requireAuthenticationAsAdmin, catchErrors(productDeleteRoute));
 
+
 module.exports = router;
