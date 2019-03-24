@@ -1,9 +1,11 @@
+
 require('dotenv').config();
 
 const fs = require('fs');
 const util = require('util');
+const faker = require('faker');
 
-const { query } = require('./db');
+const { query } = require('./src/db');
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -15,16 +17,20 @@ const readFileAsync = util.promisify(fs.readFile);
 async function main() {
   console.info(`Set upp gagnagrunn á ${connectionString}`);
   // droppa töflum ef til
-  await query('DROP TABLE IF EXISTS project');
+  await query('DROP TABLE IF EXISTS categories cascade');
+  await query('DROP TABLE IF EXISTS products cascade');
+  await query('DROP TABLE IF EXISTS users cascade');
+  await query('DROP TABLE IF EXISTS orders cascade');
+  await query('DROP TABLE IF EXISTS cart_products cascade');
   console.info('Töflu eytt');
 
   // búa til töflur út frá skema
   try {
     const createTable = await readFileAsync('./schema.sql');
     await query(createTable.toString('utf8'));
-    console.info('Tafla búin til');
+    console.info('Töflur búnar til');
   } catch (e) {
-    console.error('Villa við að búa til töflu:', e.message);
+    console.error('Villa við að búa til töflur:', e.message);
     return;
   }
 
@@ -36,7 +42,37 @@ async function main() {
   } catch (e) {
     console.error('Villa við að bæta gögnum við:', e.message);
   }
+
+  /* Setur inn í töflurnar categories og products */
+  var departmts = [];
+  while(departmts.length < 12) {
+    const departmt = faker.commerce.department();
+    if(departmts.indexOf(departmt) === -1) {
+      departmts.push(departmt);
+      const q = 'INSERT INTO categories (title) VALUES ($1)';
+      await query(q, [departmt]);
+    } 
+  }
+
+  var products = [];
+  while(products.length < 15) {
+    const product = faker.commerce.productName();
+    if(products.indexOf(product) === -1) {
+      products.push(product);
+      const price = Math.round(faker.commerce.price());
+      const description = faker.lorem.sentence();
+      const department = departmts[Math.floor(Math.random() * departmts.length)];
+      const q1 = 'SELECT id FROM categories WHERE title = $1';
+      const category = await query(q1, [department]);
+      const q2 = 'INSERT INTO products (title, price, description, category) VALUES ($1, $2, $3, $4)';
+      const prodValues = [product, price, description, category.rows[0].id];
+      await query(q2, prodValues);
+    } 
+  }
+  console.log('komið');
+
 }
+
 
 main().catch((err) => {
   console.error(err);

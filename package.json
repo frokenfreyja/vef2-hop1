@@ -8,7 +8,9 @@
         "start": "node app.js",
         "eslint": "eslint *.js",
         "test": "npm run eslint",
-        "setup": "node setup.js"
+        "setup": "node setup.js",
+        "names": "node names.js",
+        "addProducts": "node addProducts.js"
     },
     "keywords": [],
     "author": "",
@@ -16,7 +18,9 @@
     "dependencies": {
         "dotenv": "^7.0.0",
         "express": "^4.16.4",
-        "faker": "^4.1.0"
+        "faker": "^4.1.0",
+        "knex": "^0.16.3",
+        "pg": "^7.9.0"
     },
     "devDependencies": {
         "eslint": "5.14.1",
