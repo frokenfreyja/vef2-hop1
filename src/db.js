@@ -1,5 +1,13 @@
 const { Client } = require('pg');
 
+const xss = require('xss');
+const { validateCategory, validateProduct } = require('../validation');
+
+/* hjálparföll */
+function isEmpty(s) {
+  return s == null && !s;
+}
+
 /**
  * Execute an SQL query.
  *
@@ -37,37 +45,105 @@ async function paged(sqlQuery) {
   };
 }
 
-async function conditionalUpdate(table, id, fields, values) {
-  const filteredFields = fields.filter(i => typeof i === 'string');
-  const filteredValues = values.filter(i => typeof i === 'string' || typeof i === 'number');
+/* ------- VANTAR IMAGE+CATEGORYID ----------- */
+async function updateProduct(id, { title, price, description, categoryid }) {
+  const result = await query('SELECT * FROM products where productid = $1', [id]);
 
-  if (filteredFields.length === 0) {
-    return false;
+  if (result.rows.length === 0) {
+    return {
+      success: false,
+      notFound: true,
+      validation: [],
+    };
   }
 
-  if (filteredFields.length !== filteredValues.length) {
-    throw new Error('fields and values must be of equal length');
+  const validationResult = await validateProduct({ title, price, description, categoryid });
+
+  if (validationResult.length > 0) {
+    return {
+      success: false,
+      notFound: false,
+      validation: validationResult,
+    };
   }
 
-  // id is field = 1
-  const updates = filteredFields.map((field, i) => `${field} = $${i + 2}`);
+  const changedColumns = [
+    !isEmpty(title) ? 'title' : null,
+    !isEmpty(price) ? 'price' : null,
+    !isEmpty(description) ? 'description' : null,
+    !isEmpty(categoryid) ? 'categoryid' : null,
+  ].filter(Boolean);
 
-  const q = `
-    UPDATE ${table}
-      SET ${updates.join(', ')}
-    WHERE
-      id = $1
-    RETURNING *
-    `;
+  const changedValues = [
+    !isEmpty(title) ? xss(title) : null,
+    !isEmpty(price) ? xss(price) : null,
+    !isEmpty(description) ? xss(description) : null,
+    !isEmpty(categoryid) ? xss(categoryid) : null,
+  ].filter(Boolean);
 
-  const result = await query(q, [id].concat(filteredValues));
+  const updates = [id, ...changedValues];
 
-  return result;
+  const updatedColumnsQuery = changedColumns.map((column, i) => `${column} = $${i + 2}`);
+
+  const sqlQuery = `
+    UPDATE products
+    SET ${updatedColumnsQuery.join(', ')}
+    WHERE productid = $1
+    RETURNING *`;
+
+  const updateResult = await query(sqlQuery, updates);
+  return {
+    success: true,
+    item: updateResult.rows[0],
+  };
+}
+
+async function updateCategory(id, { title } = {}) {
+  const result = await query('SELECT * FROM categories where categoryid = $1', [id]);
+
+  if (result.rows.length === 0) {
+    return {
+      success: false,
+      notFound: true,
+      validation: [],
+    };
+  }
+
+  const validationResult = await validateCategory({ title });
+
+  if (validationResult.length > 0) {
+    return {
+      success: false,
+      notFound: false,
+      validation: validationResult,
+    };
+  }
+
+  const changedColumns = [!isEmpty(title) ? 'title' : null].filter(Boolean);
+
+  const changedValues = [!isEmpty(title) ? xss(title) : null].filter(Boolean);
+
+  const updates = [id, ...changedValues];
+
+  const updatedColumnsQuery = changedColumns.map((column, i) => `${column} = $${i + 2}`);
+
+  const sqlQuery = `
+    UPDATE categories
+    SET ${updatedColumnsQuery.join(', ')}
+    WHERE categoryid = $1
+    RETURNING *`;
+
+  const updateResult = await query(sqlQuery, updates);
+  return {
+    success: true,
+    item: updateResult.rows[0],
+  };
 }
 
 
 module.exports = {
   query,
   paged,
-  conditionalUpdate,
+  updateProduct,
+  updateCategory,
 };

@@ -9,18 +9,22 @@
         "eslint": "eslint *.js",
         "test": "npm run eslint",
         "setup": "node setup.js",
-        "names": "node names.js",
-        "addProducts": "node addProducts.js"
     },
     "keywords": [],
     "author": "",
     "license": "ISC",
     "dependencies": {
+        "bcrypt": "^3.0.4",
         "dotenv": "^7.0.0",
         "express": "^4.16.4",
         "faker": "^4.1.0",
-        "knex": "^0.16.3",
-        "pg": "^7.9.0"
+        "fs": "0.0.1-security",
+        "jsonwebtoken": "^8.5.1",
+        "passport": "^0.4.0",
+        "passport-jwt": "^4.0.0",
+        "pg": "^7.9.0",
+        "validator": "^10.11.0",
+        "xss": "^1.0.5"
     },
     "devDependencies": {
         "eslint": "5.14.1",
