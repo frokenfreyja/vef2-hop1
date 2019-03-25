@@ -2,7 +2,9 @@ const xss = require('xss');
 const { query, paged, updateProduct, updateCategory } = require('./db');
 
 async function categoriesRoute(req, res) {
-  const categories = await paged('SELECT * FROM categories');
+  const { offset = 0, limit = 10 } = req.query;
+
+  const categories = await paged('SELECT * FROM categories', { offset, limit });
 
   return res.json(categories);
 }
@@ -77,11 +79,14 @@ async function productsRoute(req, res) {
 
   if (typeof search === 'string' && search !== '') {
     q = `
-      SELECT * FROM products
+    SELECT 
+      products.*, categories.title AS categoryTitle
+      FROM products
+      LEFT JOIN categories ON products.categoryid = categories.categoryid
       WHERE
-        to_tsvector('english', title) @@ plainto_tsquery('english', $1)
+        to_tsvector('english', products.title) @@ plainto_tsquery('english', $1)
         OR
-        to_tsvector('english', description) @@ plainto_tsquery('english', $1)
+        to_tsvector('english', products.description) @@ plainto_tsquery('english', $1)
       ORDER BY created DESC
     `;
     values.push(search);
@@ -89,9 +94,12 @@ async function productsRoute(req, res) {
 
   if (typeof category === 'string' && category !== '') {
     q = `
-      SELECT * FROM products
+    SELECT 
+      products.*, categories.title AS categoryTitle
+      FROM products
+      LEFT JOIN categories ON products.categoryid = categories.categoryid
       WHERE
-        to_tsvector('english', categoryid) @@ plainto_tsquery('english', $1)
+        to_tsvector('english', categories.title) @@ plainto_tsquery('english', $1)
       ORDER BY created DESC
     `;
     values.push(category);
