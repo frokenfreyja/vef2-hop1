@@ -20,7 +20,7 @@ async function main() {
   await query('DROP TABLE IF EXISTS categories cascade');
   await query('DROP TABLE IF EXISTS products cascade');
   await query('DROP TABLE IF EXISTS users cascade');
-  await query('DROP TABLE IF EXISTS orders cascade');
+  await query('DROP TABLE IF EXISTS cart cascade');
   await query('DROP TABLE IF EXISTS cart_products cascade');
   console.info('Töflu eytt');
 

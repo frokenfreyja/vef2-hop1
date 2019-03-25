@@ -1,3 +1,5 @@
+const { query } = require('./src/db');
+
 const invalidField = (s, maxlen) => {
   if (s !== undefined && typeof s !== 'string') {
     return true;
