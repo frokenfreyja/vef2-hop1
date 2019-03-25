@@ -128,9 +128,26 @@ async function cartLinePatchRoute(req, res) {
   return res.status(201).json(result.item);
 }
 
+async function cartLineDeleteRoute(req, res) {
+  const { id } = req.params;
+
+  if (!Number.isInteger(Number(id))) {
+    return res.status(404).json({ error: 'Cart product not found' });
+  }
+
+  const del = await query('DELETE FROM cart_products WHERE cartproductid = $1', [id]);
+
+  if (del.rowCount === 1) {
+    return res.status(204).json({});
+  }
+
+  return res.status(404).json({ error: 'Cart product not found' });
+}
+
 module.exports = {
   cartRoute,
   cartPostRoute,
   cartLineRoute,
   cartLinePatchRoute,
+  cartLineDeleteRoute,
 };
