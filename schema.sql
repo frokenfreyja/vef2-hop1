@@ -22,8 +22,8 @@ CREATE TABLE users (
   admin boolean default false
 );
 
-CREATE TABLE orders (
-  orderid serial primary key,
+CREATE TABLE cart (
+  cartid serial primary key,
   userid int not null,
   ordered boolean default false,
   name varchar(128),
@@ -34,9 +34,9 @@ CREATE TABLE orders (
 
 CREATE TABLE cart_products (
   cartproductsid serial primary key,
-  orderid int not null,
+  cartid int not null,
   productid int not null,
   amount int,
-  foreign key(productid) references products(productid),
-  foreign key(orderid) references orders(orderid)  
+  foreign key(cartid) references cart(cartid), 
+  foreign key(productid) references products(productid)
 );

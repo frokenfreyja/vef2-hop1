@@ -28,3 +28,18 @@ INSERT INTO products
 (title, price, description, categoryid)
 VALUES
 ('Vegan meatballs', 1000, 'Swedish vegan meatballs', 2);
+
+INSERT INTO cart 
+(userid)
+VALUES
+(2);
+
+INSERT INTO cart_products 
+(cartid, productid, amount)
+VALUES
+(1, 2, 2);
+
+INSERT INTO cart_products 
+(cartid, productid, amount)
+VALUES
+(1, 1, 1);
