@@ -34,9 +34,12 @@ async function cartRoute(req, res) {
   }
 
   const cart = await query(`
-    SELECT cart_products.*
-    FROM cart_products
-    LEFT JOIN cart ON cart_products.cartid = cart.cartid
+    SELECT products.*, cart_products.amount
+    FROM products
+    INNER JOIN cart_products 
+        ON products.productid = cart_products.productid
+    INNER JOIN cart 
+        ON cart_products.cartid = cart.cartid
     WHERE userid = $1
     `, [userid]);
 
