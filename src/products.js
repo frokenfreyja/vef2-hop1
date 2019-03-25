@@ -1,5 +1,5 @@
 const xss = require('xss');
-const { query, paged, createProduct, updateProduct, updateCategory } = require('./db');
+const { query, paged, updateProduct, updateCategory } = require('./db');
 
 async function categoriesRoute(req, res) {
   const categories = await paged('SELECT * FROM categories');
@@ -64,7 +64,7 @@ async function categoriesDeleteRoute(req, res) {
 }
 
 async function productsRoute(req, res) {
-  const { search, category } = req.query;
+  const { offset = 0, limit = 10, search = '', category = '' } = req.query;
 
   let q = `
     SELECT 
@@ -87,17 +87,17 @@ async function productsRoute(req, res) {
     values.push(search);
   }
 
-  if (typeof category === 'number' && category !== '') {
+  if (typeof category === 'string' && category !== '') {
     q = `
       SELECT * FROM products
       WHERE
-        to_tsvector('english', category) @@ plainto_tsquery('english', $1)
+        to_tsvector('english', categoryid) @@ plainto_tsquery('english', $1)
       ORDER BY created DESC
     `;
     values.push(category);
   }
 
-  const products = await paged(q, { values });
+  const products = await paged(q, { offset, limit, values });
   return res.json(products);
 }
 
