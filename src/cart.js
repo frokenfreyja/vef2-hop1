@@ -43,7 +43,17 @@ async function cartRoute(req, res) {
   if (cart.rows.length === 0) {
     return res.status(404).json({ error: 'Cart not found' });
   }
-  return res.json(cart.rows);
+  const price = await query(`
+    SELECT SUM(price)
+    FROM products
+    INNER JOIN cart_products 
+        ON products.productid = cart_products.productid
+    INNER JOIN cart 
+        ON cart_products.cartid = cart.cartid
+    WHERE userid = $1
+    `, [userid]);
+
+  return res.json({ cart: cart.rows, totalPrice: price.rows[0] });
 }
 
 async function cartPostRoute(req, res) {
