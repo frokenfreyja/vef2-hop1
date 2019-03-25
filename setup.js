@@ -55,7 +55,7 @@ async function main() {
   }
 
   var products = [];
-  while(products.length < 15) {
+  while(products.length < 1000) {
     const product = faker.commerce.productName();
     if(products.indexOf(product) === -1) {
       products.push(product);
@@ -64,8 +64,10 @@ async function main() {
       const department = departmts[Math.floor(Math.random() * departmts.length)];
       const q1 = 'SELECT categoryid FROM categories WHERE title = $1';
       const category = await query(q1, [department]);
-      const q2 = 'INSERT INTO products (categoryid, title, price, description) VALUES ($1, $2, $3, $4)';
-      const prodValues = [ category.rows[0].categoryid, product, price, description];
+
+      const q2 = 'INSERT INTO products (title, price, description, categoryid) VALUES ($1, $2, $3, $4)';
+      const prodValues = [product, price, description, category.rows[0].categoryid];
+      
       await query(q2, prodValues);
     } 
   }
