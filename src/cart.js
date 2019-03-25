@@ -1,5 +1,5 @@
 const xss = require('xss');
-const { query } = require('../src/db');
+const { query, updateCartLine } = require('../src/db');
 const { findUserById } = require('./users');
 
 async function validateCart({ productid, amount }) {
@@ -30,20 +30,33 @@ async function cartRoute(req, res) {
   const user = await findUserById(userid);
 
   if (user === null) {
-    return res.status(404).json({ error: 'You not found' });
+    return res.status(404).json({ error: 'User not found' });
   }
 
   const cart = await query(`
-    SELECT cart_products.*
-    FROM cart_products
-    LEFT JOIN cart ON cart_products.cartid = cart.cartid
+    SELECT products.*, cart_products.amount
+    FROM products
+    INNER JOIN cart_products 
+        ON products.productid = cart_products.productid
+    INNER JOIN cart 
+        ON cart_products.cartid = cart.cartid
     WHERE userid = $1
     `, [userid]);
 
   if (cart.rows.length === 0) {
     return res.status(404).json({ error: 'Cart not found' });
   }
-  return res.json(cart.rows);
+  const price = await query(`
+    SELECT SUM(price)
+    FROM products
+    INNER JOIN cart_products 
+        ON products.productid = cart_products.productid
+    INNER JOIN cart 
+        ON cart_products.cartid = cart.cartid
+    WHERE userid = $1
+    `, [userid]);
+
+  return res.json({ cart: cart.rows, totalPrice: price.rows[0] });
 }
 
 async function cartPostRoute(req, res) {
@@ -52,7 +65,7 @@ async function cartPostRoute(req, res) {
   const user = await findUserById(userid);
 
   if (user === null) {
-    return res.status(404).json({ error: 'You not found' });
+    return res.status(404).json({ error: 'User not found' });
   }
 
   const validationMessage = await validateCart(req.body);
@@ -77,7 +90,64 @@ async function cartPostRoute(req, res) {
   return res.status(201).json(result.rows[0]);
 }
 
+async function cartLineRoute(req, res) {
+  const { id } = req.params;
+
+  if (!Number.isInteger(Number(id))) {
+    return res.status(404).json({ error: 'Cart product not found' });
+  }
+
+  const cartLine = await query(`
+    SELECT products.*, cart_products.amount
+    FROM products
+    LEFT JOIN cart_products ON products.productid = cart_products.productid
+    WHERE cart_products.cartproductid = $1
+    `, [id]);
+
+  if (cartLine.rows.length === 0) {
+    return res.status(404).json({ error: 'Cart product not found' });
+  }
+
+  return res.json(cartLine.rows[0]);
+}
+
+async function cartLinePatchRoute(req, res) {
+  const { id } = req.params;
+  const { amount } = req.body;
+
+  const result = await updateCartLine(id, { amount });
+
+  if (!result.success && result.validation.length > 0) {
+    return res.status(400).json(result.validation);
+  }
+
+  if (!result.success && result.notFound) {
+    return res.status(404).json({ error: 'Cart product not found' });
+  }
+
+  return res.status(201).json(result.item);
+}
+
+async function cartLineDeleteRoute(req, res) {
+  const { id } = req.params;
+
+  if (!Number.isInteger(Number(id))) {
+    return res.status(404).json({ error: 'Cart product not found' });
+  }
+
+  const del = await query('DELETE FROM cart_products WHERE cartproductid = $1', [id]);
+
+  if (del.rowCount === 1) {
+    return res.status(204).json({});
+  }
+
+  return res.status(404).json({ error: 'Cart product not found' });
+}
+
 module.exports = {
   cartRoute,
   cartPostRoute,
+  cartLineRoute,
+  cartLinePatchRoute,
+  cartLineDeleteRoute,
 };

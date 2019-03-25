@@ -12,7 +12,13 @@ const {
   productDeleteRoute,
 } = require('./products');
 
-const { cartRoute, cartPostRoute } = require('./cart');
+const {
+  cartRoute,
+  cartPostRoute,
+  cartLineRoute,
+  cartLinePatchRoute,
+  cartLineDeleteRoute,
+} = require('./cart');
 
 const { catchErrors, requireAuthenticationAsAdmin, requireAuthentication } = require('../utils');
 const { listOfUsers, getSingleUser, updateToAdmin } = require('./users');
@@ -110,5 +116,9 @@ router.delete('/products/:id', requireAuthenticationAsAdmin, catchErrors(product
 
 router.get('/cart', requireAuthentication, catchErrors(cartRoute));
 router.post('/cart', requireAuthentication, catchErrors(cartPostRoute));
+
+router.get('/cart/line/:id', requireAuthentication, catchErrors(cartLineRoute));
+router.patch('/cart/line/:id', requireAuthentication, catchErrors(cartLinePatchRoute));
+router.delete('/cart/line/:id', requireAuthentication, catchErrors(cartLineDeleteRoute));
 
 module.exports = router;

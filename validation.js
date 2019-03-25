@@ -62,7 +62,21 @@ async function validateCategory({ title } = {}) {
   return messages;
 }
 
+async function validateCartLine({ amount } = {}) {
+  const messages = [];
+
+  if (amount || isEmpty(amount)) {
+    if (!amount || typeof amount !== 'number') {
+      messages.push({ field: 'amount', message: 'Amount is required and must be a number' });
+    } else if (amount < 0) {
+      messages.push({ field: 'amount', message: 'Amount must be a number > 0' });
+    }
+  }
+  return messages;
+}
+
 module.exports = {
   validateProduct,
   validateCategory,
+  validateCartLine,
 };
