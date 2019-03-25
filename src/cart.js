@@ -30,7 +30,7 @@ async function cartRoute(req, res) {
   const user = await findUserById(userid);
 
   if (user === null) {
-    return res.status(404).json({ error: 'You not found' });
+    return res.status(404).json({ error: 'User not found' });
   }
 
   const cart = await query(`
@@ -65,7 +65,7 @@ async function cartPostRoute(req, res) {
   const user = await findUserById(userid);
 
   if (user === null) {
-    return res.status(404).json({ error: 'You not found' });
+    return res.status(404).json({ error: 'User not found' });
   }
 
   const validationMessage = await validateCart(req.body);
@@ -90,7 +90,29 @@ async function cartPostRoute(req, res) {
   return res.status(201).json(result.rows[0]);
 }
 
+async function cartLineRoute(req, res) {
+  const { id } = req.params;
+
+  if (!Number.isInteger(Number(id))) {
+    return res.status(404).json({ error: 'Cart product not found' });
+  }
+
+  const cartLine = await query(`
+    SELECT products.*, cart_products.amount
+    FROM products
+    LEFT JOIN cart_products ON products.productid = cart_products.productid
+    WHERE cart_products.cartproductid = $1
+    `, [id]);
+
+  if (cartLine.rows.length === 0) {
+    return res.status(404).json({ error: 'Cart product not found' });
+  }
+
+  return res.json(cartLine.rows[0]);
+}
+
 module.exports = {
   cartRoute,
   cartPostRoute,
+  cartLineRoute,
 };

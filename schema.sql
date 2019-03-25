@@ -33,7 +33,7 @@ CREATE TABLE cart (
 );
 
 CREATE TABLE cart_products (
-  cartproductsid serial primary key,
+  cartproductid serial primary key,
   cartid int not null,
   productid int not null,
   amount int,
