@@ -1,5 +1,5 @@
 const xss = require('xss');
-const { query } = require('../src/db');
+const { query, updateCartLine } = require('../src/db');
 const { findUserById } = require('./users');
 
 async function validateCart({ productid, amount }) {
@@ -111,8 +111,26 @@ async function cartLineRoute(req, res) {
   return res.json(cartLine.rows[0]);
 }
 
+async function cartLinePatchRoute(req, res) {
+  const { id } = req.params;
+  const { amount } = req.body;
+
+  const result = await updateCartLine(id, { amount });
+
+  if (!result.success && result.validation.length > 0) {
+    return res.status(400).json(result.validation);
+  }
+
+  if (!result.success && result.notFound) {
+    return res.status(404).json({ error: 'Cart product not found' });
+  }
+
+  return res.status(201).json(result.item);
+}
+
 module.exports = {
   cartRoute,
   cartPostRoute,
   cartLineRoute,
+  cartLinePatchRoute,
 };

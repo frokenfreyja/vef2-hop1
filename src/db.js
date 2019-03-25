@@ -1,7 +1,7 @@
 const { Client } = require('pg');
 
 const xss = require('xss');
-const { validateCategory, validateProduct } = require('../validation');
+const { validateCategory, validateProduct, validateCartLine } = require('../validation');
 
 /* hjálparföll */
 function isEmpty(s) {
@@ -172,10 +172,53 @@ async function updateCategory(id, { title } = {}) {
   };
 }
 
+async function updateCartLine(id, { amount } = {}) {
+  const result = await query('SELECT * FROM cart_products where cartproductid = $1', [id]);
+
+  if (result.rows.length === 0) {
+    return {
+      success: false,
+      notFound: true,
+      validation: [],
+    };
+  }
+
+  const validationResult = await validateCartLine({ amount });
+
+  if (validationResult.length > 0) {
+    return {
+      success: false,
+      notFound: false,
+      validation: validationResult,
+    };
+  }
+
+  const changedColumns = [!isEmpty(amount) ? 'amount' : null].filter(Boolean);
+
+  const changedValues = [!isEmpty(amount) ? xss(amount) : null].filter(Boolean);
+
+  const updates = [id, ...changedValues];
+
+  const updatedColumnsQuery = changedColumns.map((column, i) => `${column} = $${i + 2}`);
+
+  const sqlQuery = `
+    UPDATE cart_products
+    SET ${updatedColumnsQuery.join(', ')}
+    WHERE cartproductid = $1
+    RETURNING *`;
+
+  const updateResult = await query(sqlQuery, updates);
+  return {
+    success: true,
+    item: updateResult.rows[0],
+  };
+}
+
 
 module.exports = {
   query,
   paged,
   updateProduct,
   updateCategory,
+  updateCartLine,
 };
