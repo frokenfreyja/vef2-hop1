@@ -1,19 +1,9 @@
 const xss = require('xss');
-const { query, paged } = require('../src/db');
+const { query } = require('../src/db');
 const { findUserById } = require('./users');
 
-async function validateCart({ cartid, productid, amount }) {
+async function validateCart({ productid, amount }) {
   const messages = [];
-
-  if (!cartid || !Number.isInteger(Number(cartid))) {
-    messages.push({ field: 'cartid', message: 'Cart is required and must be an integer' });
-  } else {
-    const cart = await query('SELECT * FROM cart WHERE cartid = $1', [cartid]);
-
-    if (cart.rows.length === 0) {
-      messages.push({ field: 'cartid', message: `Cart "${cartid}" does not exist` });
-    }
-  }
 
   if (!productid || !Number.isInteger(Number(productid))) {
     messages.push({ field: 'productid', message: 'Product is required and must be an integer' });
@@ -36,7 +26,6 @@ async function validateCart({ cartid, productid, amount }) {
 
 async function cartRoute(req, res) {
   const { userid } = req.user;
-  const { offset = 0 } = req.query;
 
   const user = await findUserById(userid);
 
@@ -58,7 +47,14 @@ async function cartRoute(req, res) {
 }
 
 async function cartPostRoute(req, res) {
-  const { id } = req.user;
+  const { userid } = req.user;
+
+  const user = await findUserById(userid);
+
+  if (user === null) {
+    return res.status(404).json({ error: 'You not found' });
+  }
+
   const validationMessage = await validateCart(req.body);
 
   if (validationMessage.length > 0) {
@@ -66,20 +62,15 @@ async function cartPostRoute(req, res) {
   }
 
   const q = `
-    INSERT INTO
-      cart_products(cartid, productid, amount) AND cart(userid)
-    VALUES
-      ($1, $2, $3, $4)
-    LEFT JOIN cart ON cart_products.cartid = cart.cartid
-    RETURNING *
-  `;
+  INSERT INTO
+    cart_products(cartid, productid, amount)
+  VALUES
+    ($1, $2, $3)
+  RETURNING *
+`;
+  //  LEFT JOIN cart ON cart_products.cartid = cart.cartid AND users.userid = cart.userid
 
-  const values = [
-    xss(req.body.cartid),
-    xss(req.body.productid),
-    xss(req.body.amount),
-    id,
-  ];
+  const values = [xss(req.body.cartid), xss(req.body.productid), xss(req.body.amount)];
 
   const result = await query(q, values);
 
