@@ -27,5 +27,7 @@ Til að innskrá sig þarf að kalla á http://127.0.0.1:3000/users/login með P
 ## Nöfn og notendanöfn hóps
 
 Freyja Sigurgísladóttir - frs24@hi.is - frokenfreyja
+
 Henrietta Þóra Magnúsdóttir - hthm6@hi.is - HennyM
+
 Kristín María Tómasdóttir - kmt3@hi.is - krimtom
