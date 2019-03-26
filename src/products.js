@@ -296,37 +296,6 @@ async function productDeleteRoute(req, res) {
   return res.status(404).json({ error: 'Product not found' });
 }
 
-async function productsImageRoute(req, res, next) {
-  console.log('hallo frá productsImageRoute');
-
-  const { file: { path } = {} } = req;
-  console.log('path:', path);
-
-  if (!path) {
-    return res.status(400).json({ error: 'Unable to read image' });
-  }
-
-  let upload = null;
-
-  try {
-    upload = await cloudinary.v2.uploader.upload(path);
-  } catch (error) {
-    if (error.http_code && error.http_code === 400) {
-      return res.status(400).json({ error: error.message });
-    }
-
-    console.error('Unable to upload file to cloudinary:', path);
-    return next(error);
-  }
-
-  const q = 'UPDATE products SET image = $1 WHERE productid = 2 RETURNING *';
-
-  const result = await query(q, [upload.secure_url]);
-
-  const row = result.rows[0];
-
-  return res.status(201).json(row);
-}
 
 async function productsImageRouteWithMulter(req, res, next) {
   uploads.single('image')(req, res, (err) => {
