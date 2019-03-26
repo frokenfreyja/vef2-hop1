@@ -20,7 +20,7 @@ async function main() {
   await query('DROP TABLE IF EXISTS categories cascade');
   await query('DROP TABLE IF EXISTS products cascade');
   await query('DROP TABLE IF EXISTS users cascade');
-  await query('DROP TABLE IF EXISTS orders cascade');
+  await query('DROP TABLE IF EXISTS cart cascade');
   await query('DROP TABLE IF EXISTS cart_products cascade');
   console.info('Töflu eytt');
 
@@ -64,8 +64,9 @@ async function main() {
       const department = departmts[Math.floor(Math.random() * departmts.length)];
       const q1 = 'SELECT categoryid FROM categories WHERE title = $1';
       const category = await query(q1, [department]);
-      const q2 = 'INSERT INTO products (catid, title, price, description) VALUES ($1, $2, $3, $4)';
-      const prodValues = [ category.rows[0].categoryid, product, price, description];
+      const q2 = 'INSERT INTO products (categoryid, title, price, description) VALUES ($1, $2, $3, $4)';
+      const prodValues = [category.rows[0].categoryid, product, price, description];
+
       await query(q2, prodValues);
     } 
   }

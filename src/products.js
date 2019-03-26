@@ -20,8 +20,17 @@ cloudinary.config({
   api_secret: CLOUDINARY_API_SECRET,
 });
 
+const {
+  query,
+  paged,
+  updateProduct,
+  updateCategory,
+} = require('./db');
+
 async function categoriesRoute(req, res) {
-  const categories = await paged('SELECT * FROM categories');
+  const { offset = 0, limit = 10 } = req.query;
+
+  const categories = await paged('SELECT * FROM categories', { offset, limit });
 
   return res.json(categories);
 }
@@ -83,7 +92,12 @@ async function categoriesDeleteRoute(req, res) {
 }
 
 async function productsRoute(req, res) {
-  const { search, category } = req.query;
+  const {
+    offset = 0,
+    limit = 10,
+    search = '',
+    category = '',
+  } = req.query;
 
   let q = `
     SELECT 
@@ -96,31 +110,36 @@ async function productsRoute(req, res) {
 
   if (typeof search === 'string' && search !== '') {
     q = `
-      SELECT * FROM products
+    SELECT 
+      products.*, categories.title AS categoryTitle
+      FROM products
+      LEFT JOIN categories ON products.categoryid = categories.categoryid
       WHERE
-        to_tsvector('english', title) @@ plainto_tsquery('english', $1)
+        to_tsvector('english', products.title) @@ plainto_tsquery('english', $1)
         OR
-        to_tsvector('english', description) @@ plainto_tsquery('english', $1)
+        to_tsvector('english', products.description) @@ plainto_tsquery('english', $1)
       ORDER BY created DESC
     `;
     values.push(search);
   }
 
-  if (typeof category === 'number' && category !== '') {
+  if (typeof category === 'string' && category !== '') {
     q = `
-      SELECT * FROM products
+    SELECT 
+      products.*, categories.title AS categoryTitle
+      FROM products
+      LEFT JOIN categories ON products.categoryid = categories.categoryid
       WHERE
-        to_tsvector('english', category) @@ plainto_tsquery('english', $1)
+        to_tsvector('english', categories.title) @@ plainto_tsquery('english', $1)
       ORDER BY created DESC
     `;
     values.push(category);
   }
 
-  const products = await paged(q, { values });
+  const products = await paged(q, { offset, limit, values });
   return res.json(products);
 }
 
-/* ------------ VANTAR IMAGE+CATEGORY ------------- */
 async function productsPostRoute(req, res) {  
   const { title, price, description, categoryid, image } = req.body;
   const { file: { path, mimetype } = {} } = req;
@@ -140,7 +159,6 @@ async function productsPostRoute(req, res) {
     return res.status(400).json({ error: 'The file is not in the right format' });
   }
 
-
   if (typeof title !== 'string' || title.length === 0 || title.length > 255) {
     const message = 'Title is required, must not be empty or longar than 255 characters';
     return res.status(400).json({
@@ -148,7 +166,6 @@ async function productsPostRoute(req, res) {
     });
   }
   console.log(title);
-
 
   if (typeof newPrice !== 'number') {
     const message = 'Price is required and must be a number';
@@ -193,7 +210,7 @@ async function productsPostRoute(req, res) {
   const q = 'INSERT INTO products (title, price, description, categoryid, image) VALUES ($1, $2, $3, $4, $5) RETURNING *';
   const result = await query(q, [xss(title),xss(newPrice),xss(description), xss(newCat), upload.secure_url]);
 
-  return res.status(201).json(result.rows[0]);
+  return res.status(201).json(result.rows);
 }
 
 async function productRoute(req, res) {
@@ -203,7 +220,6 @@ async function productRoute(req, res) {
     return res.status(404).json({ error: 'Product not found' });
   }
 
-  
   const product = await query(`
     SELECT
       products.*, categories.title AS categoryTitle
