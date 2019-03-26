@@ -1,7 +1,13 @@
 const express = require('express');
+// const jwt = require('jsonwebtoken');
 
 const { catchErrors, requireAuthenticationAsAdmin } = require('../utils');
-const { listOfUsers, getSingleUser, updateToAdmin } = require('./users');
+const {
+  listOfUsers,
+  getSingleUser,
+  updateToAdmin,
+  registerAsUser,
+} = require('./users');
 
 const router = express.Router();
 
@@ -59,10 +65,18 @@ async function getUser(req, res) {
   return res.status(404).json({ error: 'User not found' });
 }
 
+/**
+ * Breytir boolean fyrir admin með ákveðið id í gagnagrunni, ef id er ekki til skilar það
+ * user not found og ef að admin er ekki boolean skilar það að það þurfi.
+ * Ef admin er boolean og ekki sama id og hjá þeim sem breytir skilar það user-inum.
+ * @param {Object} req
+ * @param {Object} res
+ */
 async function makeUserAdmin(req, res) {
   const { id } = req.params;
   const { admin } = req.body;
 
+  // Þarf að athuga hvort að token.id er sama og id - þá skila að megi ekki breyta
   const result = await updateToAdmin(id, { admin });
 
   if (!result.success && result.notFound) {
@@ -76,10 +90,29 @@ async function makeUserAdmin(req, res) {
   return res.status(200).json(result.item);
 }
 
+async function registerUser(req, res) {
+  const {
+    username = '',
+    password = '',
+    email = '',
+  } = req.body;
+
+  const result = await registerAsUser(username, password, email);
+
+  // Skilar 400 bad request ef að upplýsingar um notanda eru ekki réttar eða ekki til staðar
+  if (!result.success && result.validation.length > 0) {
+    return res.status(400).json(result.validation);
+  }
+
+  // Skila 201 created ef upplýsingar eru réttar og notandi búinn til í gagnagrunni
+  return res.status(201).json(result.item);
+}
+
 
 router.get('/', listOfUrls);
 router.get('/users/', requireAuthenticationAsAdmin, catchErrors(getUsers));
 router.get('/users/:id', requireAuthenticationAsAdmin, catchErrors(getUser));
 router.patch('/users/:id', requireAuthenticationAsAdmin, catchErrors(makeUserAdmin));
+router.post('/users/register', catchErrors(registerUser));
 
 module.exports = router;

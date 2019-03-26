@@ -1,6 +1,18 @@
 const bcrypt = require('bcrypt');
+const xss = require('xss');
+const emailValidator = require('email-validator');
+// const util = require('util');
+// const fs = require('fs');
 
 const { query } = require('./db');
+
+// const readFileAsync = util.promisify(fs.readFile);
+
+/* Lesum inn commonpw.txt skránna
+async function readList() {
+  const data = await readFileAsync('./commonpw.txt').toString('utf-8');
+  return data;
+} /*
 
 /**
  * Nær í lista af notendum með userid, username, email og admin
@@ -116,11 +128,120 @@ async function updateToAdmin(id, item) {
 
   const updateResult = await query(p, [id, item.admin]);
 
-
   return {
     success: true,
     notFound: false,
     item: updateResult.rows[0],
+  };
+}
+
+/**
+ * Staðfestir að upplýsingar um notenda séu gildar
+ * @param {String} username Notendanafn
+ * @param {String} email Netfang
+ * @param {String} password Lykilorð
+ */
+async function validate(username, password, email) {
+  const errors = [];
+
+  // Ef það er username - athuga hvort það er strengur að lengd 0-128
+  if (!isEmpty(username)) {
+    if (typeof username !== 'string' || username.length === 0 || username.length > 128) {
+      errors.push({
+        field: 'username',
+        message: 'Username must be a string of length 1 to 128',
+      });
+    }
+
+    // Svo athuga hvort að username sé til - ef til skila error
+    const userExistByUsername = await findByUsername(username);
+
+    if (userExistByUsername) {
+      errors.push({
+        field: 'username',
+        message: 'Username is already registered',
+      });
+    }
+  }
+
+  if (!isEmpty(email)) {
+    if (email.length === 0 || email.length > 128) {
+      errors.push({
+        field: 'email',
+        message: 'Email must be a string of length 1 to 128',
+      });
+    }
+
+    if (!emailValidator.validate(email)) {
+      errors.push({
+        field: 'email',
+        message: 'Email must be an email',
+      });
+    }
+
+    // Svo athuga hvort að email sé til - ef til skila error
+    const userExistByEmail = await findByEmail(email);
+
+    if (userExistByEmail) {
+      errors.push({
+        field: 'email',
+        message: 'Email is already registered',
+      });
+    }
+  }
+
+  // TODO - Vantar að athuga hvort að password sé eitt af common pw
+  if (!isEmpty(password)) {
+    if (typeof password !== 'string' || password.length < 8 || password.length > 128) {
+      errors.push({
+        field: 'password',
+        message: 'Password has to be a string of length 8 to 128',
+      });
+    }
+  }
+
+  return errors;
+}
+
+
+/**
+ * Býr til nýjan notanda og setur í gagnagrunn ef að upplýsingar um hann eru gildar
+ * @param {String} username Notendanafn
+ * @param {String} password Lykilorð
+ * @param {String} email Netfang
+ */
+async function registerAsUser(username, password, email) {
+  const validation = await validate(username, password, email);
+
+  if (validation.length > 0) {
+    return {
+      success: false,
+      notFound: false,
+      validation,
+    };
+  }
+
+  // Ef allt í lagi þá bcrypt-a password og setja notanda í gagnagrunn - skila username og email
+  const hashedPassword = await bcrypt.hash(password, 11);
+
+  const newUser = [
+    xss(username),
+    hashedPassword,
+    xss(email),
+  ];
+
+  const p = `
+  INSERT INTO users
+  (username, password, email)
+  VALUES
+  ($1, $2, $3)
+  RETURNING userid, email`;
+
+  const createUser = await query(p, newUser);
+
+  return {
+    success: true,
+    item: createUser.rows[0],
   };
 }
 
@@ -132,4 +253,5 @@ module.exports = {
   getSingleUser,
   comparePasswords,
   updateToAdmin,
+  registerAsUser,
 };
