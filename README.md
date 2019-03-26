@@ -24,7 +24,7 @@ Admin er með netfangið 'admin@admin.is' og lykilorðið 'password'
 
 Til að innskrá sig þarf að kalla á http://127.0.0.1:3000/users/login með POST
 
-## Nöfn og notendanöfn hóps
+## Nöfn og notendanöfn hópmeðlima
 
 Freyja Sigurgísladóttir - frs24@hi.is - frokenfreyja
 
