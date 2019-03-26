@@ -1,4 +1,25 @@
 const xss = require('xss');
+const { query, paged, createProduct, updateProduct, updateCategory } = require('./db');
+const multer = require('multer');
+const uploads = multer({ dest: './temp'})
+const cloudinary = require('cloudinary');
+
+const {
+  CLOUDINARY_CLOUD,
+  CLOUDINARY_API_KEY,
+  CLOUDINARY_API_SECRET,
+} = process.env;
+
+if (!CLOUDINARY_CLOUD || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
+  console.warn('Missing cloudinary config, uploading images will not work');
+}
+
+cloudinary.config({
+  cloud_name: CLOUDINARY_CLOUD,
+  api_key: CLOUDINARY_API_KEY,
+  api_secret: CLOUDINARY_API_SECRET,
+});
+
 const {
   query,
   paged,
@@ -119,14 +140,24 @@ async function productsRoute(req, res) {
   return res.json(products);
 }
 
-/* ------------ VANTAR IMAGE+CATEGORY ------------- */
-async function productsPostRoute(req, res) {
-  const {
-    title,
-    price,
-    description,
-    categoryid,
-  } = req.body;
+async function productsPostRoute(req, res) {  
+  const { title, price, description, categoryid, image } = req.body;
+  const { file: { path, mimetype } = {} } = req;
+  
+  const newPrice = parseInt(price);
+  const newCat = parseInt(categoryid);
+  console.log('path', path);
+  console.log('mimitype', mimetype);
+
+  const splitMimeArray = mimetype.split('/');
+  const fileType = splitMimeArray.pop();
+  console.log(fileType);
+  console.log(typeof fileType);
+  const types = ['jpeg', 'jpg', 'png', 'gif'];
+
+  if(types.indexOf(fileType) === -1) {
+    return res.status(400).json({ error: 'The file is not in the right format' });
+  }
 
   if (typeof title !== 'string' || title.length === 0 || title.length > 255) {
     const message = 'Title is required, must not be empty or longar than 255 characters';
@@ -134,30 +165,50 @@ async function productsPostRoute(req, res) {
       errors: [{ field: 'title', message }],
     });
   }
+  console.log(title);
 
-  if (typeof price !== 'number') {
+  if (typeof newPrice !== 'number') {
     const message = 'Price is required and must be a number';
+    console.log(newPrice);
+    console.log(typeof price);
+    console.log(typeof newPrice);
+    
     return res.status(400).json({
       errors: [{ field: 'price', message }],
     });
   }
-
+  
   if (typeof description !== 'string') {
     const message = 'Description is required and must be a text';
     return res.status(400).json({
       errors: [{ field: 'description', message }],
     });
   }
-
-  if (typeof categoryid !== 'number') {
+  console.log(description);
+  if (typeof newCat !== 'number') {
     const message = 'CategoryId is required and must be a number';
     return res.status(400).json({
       errors: [{ field: 'CategoryId', message }],
     });
   }
+  console.log(newCat);
+  
 
-  const q = 'INSERT INTO products (title, price, description, categoryid) VALUES ($1, $2, $3, $4) RETURNING *';
-  const result = await query(q, [xss(title), xss(price), xss(description), xss(categoryid)]);
+  let upload = null;
+
+  try {
+    upload = await cloudinary.v2.uploader.upload(path, allowed_formats = ['gif','jpg', 'png']);
+  } catch (error) {
+    if (error.http_code && error.http_code === 400) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    console.error('Unable to upload file to cloudinary:', path);
+    return next(error);
+  }
+
+  const q = 'INSERT INTO products (title, price, description, categoryid, image) VALUES ($1, $2, $3, $4, $5) RETURNING *';
+  const result = await query(q, [xss(title),xss(newPrice),xss(description), xss(newCat), upload.secure_url]);
 
   return res.status(201).json(result.rows);
 }
@@ -181,24 +232,41 @@ async function productRoute(req, res) {
     return res.status(404).json({ error: 'Product not found' });
   }
 
+
   return res.json(product.rows[0]);
 }
 
 async function productPatchRoute(req, res) {
   const { id } = req.params;
-  const {
-    title,
-    price,
-    description,
-    categoryid,
-  } = req.body;
+  const { title, price, description, categoryid } = req.body;
+  const { file: { path, mimetype } = {} } = req;
+  console.log('path:', path);
 
-  const result = await updateProduct(id, {
-    title,
-    price,
-    description,
-    categoryid,
-  });
+  const splitMimeArray = mimetype.split('/');
+  const fileType = splitMimeArray.pop();
+  console.log(fileType);
+  const types = ['jpeg', 'png', 'gif'];
+
+  if(types.indexOf(fileType) === -1) {
+    return res.status(400).json({ error: 'The file is not in the right format' });
+  }
+
+  let upload = null;
+
+  try {
+    upload = await cloudinary.v2.uploader.upload(path, allowed_formats = ['gif','jpg', 'png']);
+  } catch (error) {
+    if (error.http_code && error.http_code === 400) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    console.error('Unable to upload file to cloudinary:', path);
+    return next(error);
+  }
+
+  const url = upload.secure_url;
+
+  const result = await updateProduct(id, { title, price, description, categoryid, url });
 
   if (!result.success && result.validation.length > 0) {
     return res.status(400).json(result.validation);
@@ -213,19 +281,95 @@ async function productPatchRoute(req, res) {
 
 
 async function productDeleteRoute(req, res) {
-  const { id } = req.params;
+  const { productid } = req.params;
 
-  if (!Number.isInteger(Number(id))) {
+  if (!Number.isInteger(Number(productid))) {
     return res.status(404).json({ error: 'Product not found' });
   }
 
-  const del = await query('DELETE FROM products WHERE productid = $1', [id]);
+  const del = await query('DELETE FROM products WHERE productid = $1', [productid]);
 
   if (del.rowCount === 1) {
     return res.status(204).json({});
   }
 
   return res.status(404).json({ error: 'Product not found' });
+}
+
+async function productsImageRoute(req, res, next) {
+  console.log('hallo frá productsImageRoute');
+
+  const { file: { path } = {} } = req;
+  console.log('path:', path);
+
+  if (!path) {
+    return res.status(400).json({ error: 'Unable to read image' });
+  }
+
+  let upload = null;
+
+  try {
+    upload = await cloudinary.v2.uploader.upload(path);
+  } catch (error) {
+    if (error.http_code && error.http_code === 400) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    console.error('Unable to upload file to cloudinary:', path);
+    return next(error);
+  }
+
+  const q = 'UPDATE products SET image = $1 WHERE productid = 2 RETURNING *';
+
+  const result = await query(q, [upload.secure_url]);
+
+  const row = result.rows[0];
+
+  return res.status(201).json(row);
+}
+
+async function findById(id) {
+  if (!Number.isInteger(Number(id))) {
+    return null;
+  }
+
+  const q = 'SELECT * FROM products WHERE productid = $1';
+
+  const result = await query(q, [id]);
+
+  if (result.rowCount === 1) {
+    return result.rows[0];
+  }
+
+  return null;
+}
+
+async function productsImageRouteWithMulter(req, res, next) {
+  uploads.single('image')(req, res, (err) => {
+    if (err) {
+      if (err.message === 'Unexpected field') {
+        return res.status(400).json({ error: 'Unable to read image' });
+      }
+
+      return next(err);
+    }
+
+    return productsPostRoute(req, res, next);
+  });
+}
+
+async function productsImagePatchRouteWithMulter(req, res, next) {
+  uploads.single('image')(req, res, (err) => {
+    if (err) {
+      if (err.message === 'Unexpected field') {
+        return res.status(400).json({ error: 'Unable to read image' });
+      }
+
+      return next(err);
+    }
+
+    return productPatchRoute(req, res, next);
+  });
 }
 
 module.exports = {
@@ -238,4 +382,6 @@ module.exports = {
   productRoute,
   productPatchRoute,
   productDeleteRoute,
+  productsImageRouteWithMulter,
+  productsImagePatchRouteWithMulter
 };
