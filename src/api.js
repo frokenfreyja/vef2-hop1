@@ -27,6 +27,7 @@ const {
   cartLineRoute,
   cartLinePatchRoute,
   cartLineDeleteRoute,
+  ordersRoute,
 } = require('./cart');
 
 const router = express.Router();
@@ -153,5 +154,7 @@ router.post('/cart', requireAuthentication, catchErrors(cartPostRoute));
 router.get('/cart/line/:id', requireAuthentication, catchErrors(cartLineRoute));
 router.patch('/cart/line/:id', requireAuthentication, catchErrors(cartLinePatchRoute));
 router.delete('/cart/line/:id', requireAuthentication, catchErrors(cartLineDeleteRoute));
+
+router.get('/orders', requireAuthentication, catchErrors(ordersRoute));
 
 module.exports = router;
