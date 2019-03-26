@@ -1,17 +1,17 @@
 CREATE TABLE categories (
   categoryid serial primary key,
-  title varchar(128) not null unique
+  title character varying(255) not null unique
 );
 
 CREATE TABLE products (
   productid serial primary key,
   categoryid int not null,
-  title varchar(128) not null unique,
+  title character varying(255) not null unique,
   price int not null,
   description text not null,
-  image varchar(128),
+  image character varying(255),
   created timestamp with time zone default current_timestamp,
-  foreign key(categoryid) references categories(categoryid)
+  foreign key(categoryid) references categories(categoryid) ON DELETE CASCADE
 );
 
 CREATE TABLE users (
@@ -22,8 +22,8 @@ CREATE TABLE users (
   admin boolean default false
 );
 
-CREATE TABLE orders (
-  orderid serial primary key,
+CREATE TABLE cart (
+  cartid serial primary key,
   userid int not null,
   ordered boolean default false,
   name varchar(128),
@@ -33,10 +33,10 @@ CREATE TABLE orders (
 );
 
 CREATE TABLE cart_products (
-  cartproductsid serial primary key,
-  orderid int not null,
+  cartproductid serial primary key,
+  cartid int not null,
   productid int not null,
   amount int,
-  foreign key(productid) references products(productid),
-  foreign key(orderid) references orders(orderid)  
+  foreign key(cartid) references cart(cartid), 
+  foreign key(productid) references products(productid)
 );
