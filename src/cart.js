@@ -1,5 +1,5 @@
 const xss = require('xss');
-const { query, paged, updateCartLine } = require('../src/db');
+const { query, updateCartLine } = require('../src/db');
 const { findUserById } = require('./users');
 
 async function validateCart({ productid, amount }) {
@@ -178,46 +178,36 @@ async function cartLineDeleteRoute(req, res) {
 }
 
 async function ordersRoute(req, res) {
-  const { offset = 0, limit = 10 } = req.query;
+  const { userid } = req.user;
 
-  const { userid, admin } = req.user;
-
-  console.log("admin: ", admin);
   const user = await findUserById(userid);
 
-  console.log("user: ", user);
   if (user === null) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  const q = `
-  SELECT *
-  FROM cart
-  ORDER BY created DESC
-  `;
-  /*
-  let q = (`
-  SELECT * 
-  FROM cart
-  WHERE userid = $1
-  ORDER BY created DESC
-  `, [userid]);
-
-  if (admin) {
-    q = `
+  // Ef notandi er ekki admin birta bara hans pantanir
+  if (user.admin === false) {
+    const orders = await query(`
     SELECT *
     FROM cart
+    WHERE userid = $1
     ORDER BY created DESC
-    `;
-  }
+    `, [userid]);
 
-  if (q.rows.length === 0) {
-    return res.status(404).json({ error: 'Orders not found' });
-  }
-  */
+    if (orders.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
 
-  const orders = await paged(q, { offset, limit });
-  return res.json(orders);
+    return res.json(orders.rows);
+  }
+  // Ef notandi er admin þa birta allar pantanir
+  const orders = await query('SELECT * FROM cart ORDER BY created DESC');
+
+  if (orders.rows.length === 0) {
+    return res.status(404).json({ error: 'Order not found' });
+  }
+  return res.json(orders.rows);
 }
 
 module.exports = {
