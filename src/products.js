@@ -312,22 +312,6 @@ async function productsImageRoute(req, res, next) {
   return res.status(201).json(row);
 }
 
-async function findById(id) {
-  if (!Number.isInteger(Number(id))) {
-    return null;
-  }
-
-  const q = 'SELECT * FROM products WHERE productid = $1';
-
-  const result = await query(q, [id]);
-
-  if (result.rowCount === 1) {
-    return result.rows[0];
-  }
-
-  return null;
-}
-
 async function productsImageRouteWithMulter(req, res, next) {
   uploads.single('image')(req, res, (err) => {
     if (err) {
