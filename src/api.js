@@ -1,12 +1,13 @@
 const express = require('express');
-// const jwt = require('jsonwebtoken');
 
-const { catchErrors, requireAuthenticationAsAdmin, requireAuthentication } = require('../utils');
+const { catchErrors, requireAuthentication, requireAuthenticationAsAdmin } = require('../utils');
+
 const {
   listOfUsers,
   getSingleUser,
   updateToAdmin,
   registerAsUser,
+  patchUserInfo,
 } = require('./users');
 
 const {
@@ -70,6 +71,12 @@ async function getUsers(req, res) {
   return res.json(result);
 }
 
+/**
+ * Nær í notanda og skilar upplýsingum um hann, ef notandi finnst ekki er skilað
+ * villuskilaboðum um að hann finnst ekki
+ * @param {Object} req
+ * @param {Object} res
+ */
 async function getUser(req, res) {
   const { id } = req.params;
 
@@ -96,6 +103,11 @@ async function getUser(req, res) {
 async function makeUserAdmin(req, res) {
   const { id } = req.params;
   const { admin } = req.body;
+  const { userid } = req.user;
+
+  if (Number(id) === userid) {
+    return res.status(403).json({ error: 'Forbidden by administrative rules' });
+  }
 
   // Þarf að athuga hvort að token.id er sama og id - þá skila að megi ekki breyta
   const result = await updateToAdmin(id, { admin });
@@ -111,6 +123,12 @@ async function makeUserAdmin(req, res) {
   return res.status(200).json(result.item);
 }
 
+/**
+ * Býr til nýjan notanda með notendanafn, lykilorð og netfang og setur í gagnagrunn
+ * ef að upplýsingar eru réttar
+ * @param {Object} req
+ * @param {Object} res
+ */
 async function registerUser(req, res) {
   const {
     username = '',
@@ -129,12 +147,58 @@ async function registerUser(req, res) {
   return res.status(201).json(result.item);
 }
 
+/**
+ * Nær í upplýsingar um notanda og birtir auðkenni og netfang
+ * @param {Object} req
+ * @param {Object} res
+ */
+async function getMyInfo(req, res) {
+  const { userid } = req.user;
+
+  const user = await getSingleUser(userid);
+
+  if (user === null) {
+    return res.status(404).json({ error: 'Could not find your information' });
+  }
+
+  delete user.username;
+  delete user.admin;
+
+  return res.status(200).json(user);
+}
+
+/**
+ * Uppfærir netfang og lykilorð notanda ef það er í body
+ * @param {Object} req
+ * @param {Object} res
+ */
+async function patchMyInfo(req, res) {
+  const { email, password } = req.body;
+  const { userid } = req.user;
+
+  const user = await getSingleUser(userid);
+
+  if (user === null) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  const result = await patchUserInfo(userid, { email, password });
+
+  if (!result.success && result.validation.length > 0) {
+    return res.status(400).json(result.validation);
+  }
+
+  return res.status(200).json(result.item);
+}
+
 
 router.get('/', listOfUrls);
 router.get('/users/', requireAuthenticationAsAdmin, catchErrors(getUsers));
+router.get('/users/me', requireAuthentication, catchErrors(getMyInfo));
 router.get('/users/:id', requireAuthenticationAsAdmin, catchErrors(getUser));
-router.patch('/users/:id', requireAuthenticationAsAdmin, catchErrors(makeUserAdmin));
 router.post('/users/register', catchErrors(registerUser));
+router.patch('/users/me', requireAuthentication, catchErrors(patchMyInfo));
+router.patch('/users/:id', requireAuthenticationAsAdmin, catchErrors(makeUserAdmin));
 
 router.get('/categories', catchErrors(categoriesRoute));
 router.post('/categories', requireAuthenticationAsAdmin, catchErrors(categoriesPostRoute));

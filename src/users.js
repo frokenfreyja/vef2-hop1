@@ -1,18 +1,21 @@
 const bcrypt = require('bcrypt');
 const xss = require('xss');
 const emailValidator = require('email-validator');
-// const util = require('util');
-// const fs = require('fs');
+const util = require('util');
+const fs = require('fs');
 
 const { query } = require('./db');
 
-// const readFileAsync = util.promisify(fs.readFile);
+const readFileAsync = util.promisify(fs.readFile);
 
-/* Lesum inn commonpw.txt skránna
+/**
+ * Lesa inn commonpw.txt skránna og skilum sem array
+ */
 async function readList() {
-  const data = await readFileAsync('./commonpw.txt').toString('utf-8');
-  return data;
-} /*
+  const data = await readFileAsync('./commonpw.txt');
+  const array = data.toString().split('\r\n');
+  return array;
+}
 
 /**
  * Nær í lista af notendum með userid, username, email og admin
@@ -111,7 +114,7 @@ async function updateToAdmin(id, item) {
     };
   }
 
-  if (!isEmpty(item.admin)) {
+  if (!isEmpty(item.admin) || !item.admin) {
     if (typeof item.admin !== 'boolean') {
       return {
         success: false,
@@ -143,9 +146,11 @@ async function updateToAdmin(id, item) {
  */
 async function validate(username, password, email) {
   const errors = [];
+  const data = await readList();
+  const found = data.find(item => item === password);
 
   // Ef það er username - athuga hvort það er strengur að lengd 0-128
-  if (!isEmpty(username)) {
+  if (!isEmpty(username) || !username) {
     if (typeof username !== 'string' || username.length === 0 || username.length > 128) {
       errors.push({
         field: 'username',
@@ -164,7 +169,7 @@ async function validate(username, password, email) {
     }
   }
 
-  if (!isEmpty(email)) {
+  if (!isEmpty(email || !email)) {
     if (email.length === 0 || email.length > 128) {
       errors.push({
         field: 'email',
@@ -190,12 +195,19 @@ async function validate(username, password, email) {
     }
   }
 
-  // TODO - Vantar að athuga hvort að password sé eitt af common pw
-  if (!isEmpty(password)) {
+  if (!isEmpty(password) || !password) {
     if (typeof password !== 'string' || password.length < 8 || password.length > 128) {
       errors.push({
         field: 'password',
         message: 'Password has to be a string of length 8 to 128',
+      });
+    }
+
+    // Svo athuga hvort að password sé á lista yfir 500 algengustu password
+    if (found) {
+      errors.push({
+        field: 'password',
+        message: 'Password must not be on the list of 500 most common passwords',
       });
     }
   }
@@ -205,7 +217,7 @@ async function validate(username, password, email) {
 
 
 /**
- * Býr til nýjan notanda og setur í gagnagrunn ef að upplýsingar um hann eru gildar
+ * Býr til nýjan notanda og vistar í gagnagrunni ef að upplýsingar um hann eru gildar
  * @param {String} username Notendanafn
  * @param {String} password Lykilorð
  * @param {String} email Netfang
@@ -245,6 +257,118 @@ async function registerAsUser(username, password, email) {
   };
 }
 
+/**
+ * Athugar hvort að netfang og lykilorð séu á réttu formi ef þau eru í body
+ * fyrir uppfærslu á notendaupplýsingum
+ * @param {String} email Netfang
+ * @param {String} password Lykilorð
+ */
+async function validateUserPatch(email, password) {
+  const errors = [];
+  const data = await readList();
+  const found = data.find(item => item === password);
+
+  // Athugar bara með email ef að email er í body
+  if (!isEmpty(email)) {
+    if (email.length === 0 || email.length > 128) {
+      errors.push({
+        field: 'email',
+        message: 'Email must be a string of length 1 to 128',
+      });
+    }
+
+    if (!emailValidator.validate(email)) {
+      errors.push({
+        field: 'email',
+        message: 'Email must be an email',
+      });
+    }
+
+    // Svo athuga hvort að email sé til - ef til skila error
+    const userExistByEmail = await findByEmail(email);
+
+    if (userExistByEmail) {
+      errors.push({
+        field: 'email',
+        message: 'Email is already registered',
+      });
+    }
+  }
+
+  // Athugar bara með password ef að password er í body
+  if (!isEmpty(password)) {
+    if (typeof password !== 'string' || password.length < 8 || password.length > 128) {
+      errors.push({
+        field: 'password',
+        message: 'Password has to be a string of length 8 to 128',
+      });
+    }
+
+    // Svo athuga hvort að password sé á lista yfir 500 algengustu password
+    if (found) {
+      errors.push({
+        field: 'password',
+        message: 'Password must not be on the list of 500 most common passwords',
+      });
+    }
+  }
+
+  return errors;
+}
+
+/**
+ * Uppfærir netfang og lykilorð notanda ef þau eru á réttu formi og vistar
+ * í gagnagrunni
+ * @param {Number} id Auðkenni notanda
+ * @param {Object} item Hlutur með netfangi og lykilorði notanda
+ */
+async function patchUserInfo(id, item) {
+  const validation = await validateUserPatch(item.email, item.password);
+
+  // Fyrst athuga hvort upplýsingar séu á réttu formi
+  if (validation.length > 0) {
+    return {
+      success: false,
+      notFound: false,
+      validation,
+    };
+  }
+
+  const changedColumns = [
+    !isEmpty(item.email) ? 'email' : null,
+    !isEmpty(item.password) ? 'password' : null,
+  ].filter(Boolean);
+
+  let hashedPassword = null;
+
+  if (item.password) {
+    hashedPassword = await bcrypt.hash(item.password, 11);
+  }
+
+  const changedValues = [
+    !isEmpty(item.email) ? xss(item.email) : null,
+    hashedPassword,
+  ].filter(Boolean);
+
+  const updates = [id, ...changedValues];
+
+  const updatedColumnsQuery = changedColumns.map((column, i) => `${column} = $${i + 2}`);
+
+  const p = `
+    UPDATE users
+    SET ${updatedColumnsQuery.join(', ')}
+    WHERE userid = $1
+    RETURNING userid, email`;
+
+  const updateResult = await query(p, updates);
+
+  return {
+    success: true,
+    notFound: false,
+    item: updateResult.rows[0],
+  };
+}
+
 module.exports = {
   listOfUsers,
   findUserById,
@@ -254,4 +378,5 @@ module.exports = {
   comparePasswords,
   updateToAdmin,
   registerAsUser,
+  patchUserInfo,
 };

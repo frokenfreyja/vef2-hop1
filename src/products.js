@@ -1,5 +1,10 @@
 const xss = require('xss');
-const { query, paged, updateProduct, updateCategory } = require('./db');
+const {
+  query,
+  paged,
+  updateProduct,
+  updateCategory,
+} = require('./db');
 
 async function categoriesRoute(req, res) {
   const { offset = 0, limit = 10 } = req.query;
@@ -66,7 +71,12 @@ async function categoriesDeleteRoute(req, res) {
 }
 
 async function productsRoute(req, res) {
-  const { offset = 0, limit = 10, search = '', category = '' } = req.query;
+  const {
+    offset = 0,
+    limit = 10,
+    search = '',
+    category = '',
+  } = req.query;
 
   let q = `
     SELECT 
@@ -111,7 +121,12 @@ async function productsRoute(req, res) {
 
 /* ------------ VANTAR IMAGE+CATEGORY ------------- */
 async function productsPostRoute(req, res) {
-  const { title, price, description, categoryid } = req.body;
+  const {
+    title,
+    price,
+    description,
+    categoryid,
+  } = req.body;
 
   if (typeof title !== 'string' || title.length === 0 || title.length > 255) {
     const message = 'Title is required, must not be empty or longar than 255 characters';
@@ -171,9 +186,19 @@ async function productRoute(req, res) {
 
 async function productPatchRoute(req, res) {
   const { id } = req.params;
-  const { title, price, description, categoryid } = req.body;
+  const {
+    title,
+    price,
+    description,
+    categoryid,
+  } = req.body;
 
-  const result = await updateProduct(id, { title, price, description, categoryid });
+  const result = await updateProduct(id, {
+    title,
+    price,
+    description,
+    categoryid,
+  });
 
   if (!result.success && result.validation.length > 0) {
     return res.status(400).json(result.validation);

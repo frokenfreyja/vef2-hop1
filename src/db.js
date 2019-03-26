@@ -78,7 +78,12 @@ async function paged(sqlQuery, { offset = 0, limit = 10, values = [] }) {
 }
 
 /* ------- VANTAR IMAGE+CATEGORYID ----------- */
-async function updateProduct(id, { title, price, description, categoryid }) {
+async function updateProduct(id, {
+  title,
+  price,
+  description,
+  categoryid,
+}) {
   const result = await query('SELECT * FROM products where productid = $1', [id]);
 
   if (result.rows.length === 0) {
@@ -89,7 +94,12 @@ async function updateProduct(id, { title, price, description, categoryid }) {
     };
   }
 
-  const validationResult = await validateProduct({ title, price, description, categoryid });
+  const validationResult = await validateProduct({
+    title,
+    price,
+    description,
+    categoryid,
+  });
 
   if (validationResult.length > 0) {
     return {
