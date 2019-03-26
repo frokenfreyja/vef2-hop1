@@ -20,13 +20,6 @@ cloudinary.config({
   api_secret: CLOUDINARY_API_SECRET,
 });
 
-const {
-  query,
-  paged,
-  updateProduct,
-  updateCategory,
-} = require('./db');
-
 async function categoriesRoute(req, res) {
   const { offset = 0, limit = 10 } = req.query;
 
