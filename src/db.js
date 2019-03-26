@@ -46,7 +46,7 @@ async function paged(sqlQuery) {
 }
 
 /* ------- VANTAR IMAGE+CATEGORYID ----------- */
-async function updateProduct(id, { title, price, description, categoryid }) {
+async function updateProduct(id, { title, price, description, categoryid, image }) {
   const result = await query('SELECT * FROM products where productid = $1', [id]);
 
   if (result.rows.length === 0) {
@@ -72,6 +72,7 @@ async function updateProduct(id, { title, price, description, categoryid }) {
     !isEmpty(price) ? 'price' : null,
     !isEmpty(description) ? 'description' : null,
     !isEmpty(categoryid) ? 'categoryid' : null,
+    !isEmpty(image) ? 'image' : null,
   ].filter(Boolean);
 
   const changedValues = [
@@ -79,6 +80,7 @@ async function updateProduct(id, { title, price, description, categoryid }) {
     !isEmpty(price) ? xss(price) : null,
     !isEmpty(description) ? xss(description) : null,
     !isEmpty(categoryid) ? xss(categoryid) : null,
+    !isEmpty(image) ? xss(image) : null,
   ].filter(Boolean);
 
   const updates = [id, ...changedValues];

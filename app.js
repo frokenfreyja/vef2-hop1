@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const api = require('./src/api');
 const { findUserById, comparePasswords, findByEmail } = require('./src/users');
 
+
 const {
   PORT: port = 3000,
   JWT_SECRET: jwtSecret,
@@ -17,6 +18,7 @@ if (!jwtSecret) {
   console.error('JWT_SECRET not registered in .env');
   process.exit(1);
 }
+
 
 const app = express();
 app.use(express.json());
@@ -97,6 +99,7 @@ function errorHandler(err, req, res, next) { // eslint-disable-line
 
 app.use(notFoundHandler);
 app.use(errorHandler);
+
 
 app.listen(port, () => {
   console.info(`Server running at http://localhost:${port}/`);
