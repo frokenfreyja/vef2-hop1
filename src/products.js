@@ -144,7 +144,7 @@ async function productsPostRoute(req, res) {
   const q = 'INSERT INTO products (title, price, description, categoryid) VALUES ($1, $2, $3, $4) RETURNING *';
   const result = await query(q, [xss(title), xss(price), xss(description), xss(categoryid)]);
 
-  return res.status(201).json(result.rows[0]);
+  return res.status(201).json(result.rows);
 }
 
 async function productRoute(req, res) {

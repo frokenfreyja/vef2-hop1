@@ -1,5 +1,5 @@
 const xss = require('xss');
-const { query, updateCartLine } = require('../src/db');
+const { query, paged, updateCartLine } = require('../src/db');
 const { findUserById } = require('./users');
 
 async function validateCart({ productid, amount }) {
@@ -34,7 +34,7 @@ async function cartRoute(req, res) {
   }
 
   const cart = await query(`
-    SELECT products.*, cart_products.amount
+    SELECT products.*, cart_products.amount, cart_products.cartid
     FROM products
     INNER JOIN cart_products 
         ON products.productid = cart_products.productid
@@ -68,10 +68,41 @@ async function cartPostRoute(req, res) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  const validationMessage = await validateCart(req.body);
+  // Sækjum körfu
+  let cart = await query(`
+  SELECT cart.*
+  FROM cart
+  WHERE userid = $1
+  `, [userid]);
 
-  if (validationMessage.length > 0) {
-    return res.status(400).json({ errors: validationMessage });
+  // Buum til körfu fyrir user ef hun er ekki til
+  if (cart.rows.length === 0) {
+    cart = await query(`
+      INSERT INTO 
+        cart(userid)
+      VALUES
+        ($1)
+      RETURNING *
+      `, [userid]);
+  } else {
+    // Annars bæta vöru við körfu og skila
+    const q = `
+    INSERT INTO
+      cart_products(cartid, productid, amount)
+    VALUES
+      ($1, $2, $3)
+    RETURNING *
+    `;
+
+    const validationMessage = await validateCart(req.body.productid, req.body.amount);
+
+    if (validationMessage.length > 0) {
+      return res.status(400).json({ errors: validationMessage });
+    }
+
+    const values = [xss(cart.rows[0].cartid), xss(req.body.productid), xss(req.body.amount)];
+    const result = await query(q, values);
+    return res.status(201).json(result.rows[0]);
   }
 
   const q = `
@@ -80,13 +111,15 @@ async function cartPostRoute(req, res) {
   VALUES
     ($1, $2, $3)
   RETURNING *
-`;
-  //  LEFT JOIN cart ON cart_products.cartid = cart.cartid AND users.userid = cart.userid
+  `;
+  const validationMessage = await validateCart(req.body.productid, req.body.amount);
 
-  const values = [xss(req.body.cartid), xss(req.body.productid), xss(req.body.amount)];
+  if (validationMessage.length > 0) {
+    return res.status(400).json({ errors: validationMessage });
+  }
 
+  const values = [xss(cart.rows[0].cartid), xss(req.body.productid), xss(req.body.amount)];
   const result = await query(q, values);
-
   return res.status(201).json(result.rows[0]);
 }
 
@@ -144,10 +177,54 @@ async function cartLineDeleteRoute(req, res) {
   return res.status(404).json({ error: 'Cart product not found' });
 }
 
+async function ordersRoute(req, res) {
+  const { offset = 0, limit = 10 } = req.query;
+
+  const { userid, admin } = req.user;
+
+  console.log("admin: ", admin);
+  const user = await findUserById(userid);
+
+  console.log("user: ", user);
+  if (user === null) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  const q = `
+  SELECT *
+  FROM cart
+  ORDER BY created DESC
+  `;
+  /*
+  let q = (`
+  SELECT * 
+  FROM cart
+  WHERE userid = $1
+  ORDER BY created DESC
+  `, [userid]);
+
+  if (admin) {
+    q = `
+    SELECT *
+    FROM cart
+    ORDER BY created DESC
+    `;
+  }
+
+  if (q.rows.length === 0) {
+    return res.status(404).json({ error: 'Orders not found' });
+  }
+  */
+
+  const orders = await paged(q, { offset, limit });
+  return res.json(orders);
+}
+
 module.exports = {
   cartRoute,
   cartPostRoute,
   cartLineRoute,
   cartLinePatchRoute,
   cartLineDeleteRoute,
+  ordersRoute,
 };
