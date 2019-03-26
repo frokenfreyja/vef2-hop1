@@ -1,13 +1,33 @@
 const express = require('express');
 // const jwt = require('jsonwebtoken');
 
-const { catchErrors, requireAuthenticationAsAdmin } = require('../utils');
+const { catchErrors, requireAuthenticationAsAdmin, requireAuthentication } = require('../utils');
 const {
   listOfUsers,
   getSingleUser,
   updateToAdmin,
   registerAsUser,
 } = require('./users');
+
+const {
+  categoriesRoute,
+  categoriesPostRoute,
+  categoriesPatchRoute,
+  categoriesDeleteRoute,
+  productsRoute,
+  productsPostRoute,
+  productRoute,
+  productPatchRoute,
+  productDeleteRoute,
+} = require('./products');
+
+const {
+  cartRoute,
+  cartPostRoute,
+  cartLineRoute,
+  cartLinePatchRoute,
+  cartLineDeleteRoute,
+} = require('./cart');
 
 const router = express.Router();
 
@@ -114,5 +134,24 @@ router.get('/users/', requireAuthenticationAsAdmin, catchErrors(getUsers));
 router.get('/users/:id', requireAuthenticationAsAdmin, catchErrors(getUser));
 router.patch('/users/:id', requireAuthenticationAsAdmin, catchErrors(makeUserAdmin));
 router.post('/users/register', catchErrors(registerUser));
+
+router.get('/categories', catchErrors(categoriesRoute));
+router.post('/categories', requireAuthenticationAsAdmin, catchErrors(categoriesPostRoute));
+router.patch('/categories/:id', requireAuthenticationAsAdmin, catchErrors(categoriesPatchRoute));
+router.delete('/categories/:id', requireAuthenticationAsAdmin, catchErrors(categoriesDeleteRoute));
+
+router.get('/products', catchErrors(productsRoute));
+router.post('/products', requireAuthenticationAsAdmin, catchErrors(productsPostRoute));
+
+router.get('/products/:id', catchErrors(productRoute));
+router.patch('/products/:id', requireAuthenticationAsAdmin, catchErrors(productPatchRoute));
+router.delete('/products/:id', requireAuthenticationAsAdmin, catchErrors(productDeleteRoute));
+
+router.get('/cart', requireAuthentication, catchErrors(cartRoute));
+router.post('/cart', requireAuthentication, catchErrors(cartPostRoute));
+
+router.get('/cart/line/:id', requireAuthentication, catchErrors(cartLineRoute));
+router.patch('/cart/line/:id', requireAuthentication, catchErrors(cartLinePatchRoute));
+router.delete('/cart/line/:id', requireAuthentication, catchErrors(cartLineDeleteRoute));
 
 module.exports = router;
