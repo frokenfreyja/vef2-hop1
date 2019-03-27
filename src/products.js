@@ -21,9 +21,9 @@ cloudinary.config({
 });
 
 async function categoriesRoute(req, res) {
-  const { offset = 0, limit = 10 } = req.query;
+  const { route ='categories', offset = 0, limit = 10 } = req.query;
 
-  const categories = await paged('SELECT * FROM categories', { offset, limit });
+  const categories = await paged('SELECT * FROM categories', { route, offset, limit });
 
   return res.json(categories);
 }
@@ -86,6 +86,7 @@ async function categoriesDeleteRoute(req, res) {
 
 async function productsRoute(req, res) {
   const {
+    route = 'products',
     offset = 0,
     limit = 10,
     search = '',
@@ -129,7 +130,7 @@ async function productsRoute(req, res) {
     values.push(category);
   }
 
-  const products = await paged(q, { offset, limit, values });
+  const products = await paged(q, { route, offset, limit, values });
   return res.json(products);
 }
 
@@ -329,5 +330,5 @@ module.exports = {
   productPatchRoute,
   productDeleteRoute,
   productsImageRouteWithMulter,
-  productsImagePatchRouteWithMulter
+  productsImagePatchRouteWithMulter,
 };
