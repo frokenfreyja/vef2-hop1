@@ -28,6 +28,8 @@ cloudinary.config({
   api_secret: CLOUDINARY_API_SECRET,
 });
 
+
+
 async function categoriesRoute(req, res) {
   const { route = 'categories', offset = 0, limit = 10 } = req.query;
 
@@ -167,8 +169,6 @@ async function productsPostRoute(req, res, next) {
 
   const splitMimeArray = mimetype.split('/');
   const fileType = splitMimeArray.pop();
-  console.log(fileType);
-  console.log(typeof fileType);
   const types = ['jpeg', 'jpg', 'png', 'gif'];
 
   if (types.indexOf(fileType) === -1) {
@@ -188,13 +188,9 @@ async function productsPostRoute(req, res, next) {
       message,
     });
   }
-  console.log(title);
 
   if (typeof newPrice !== 'number') {
     const message = 'Price is required and must be a number';
-    console.log(newPrice);
-    console.log(typeof price);
-    console.log(typeof newPrice);
     errors.push({
       field: 'price',
       message,
