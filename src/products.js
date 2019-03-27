@@ -153,10 +153,13 @@ async function productsPostRoute(req, res) {
     return res.status(400).json({ error: 'The file is not in the right format' });
   }
 
+  const errors = [];
+
   if (typeof title !== 'string' || title.length === 0 || title.length > 255) {
     const message = 'Title is required, must not be empty or longar than 255 characters';
-    return res.status(400).json({
-      errors: [{ field: 'title', message }],
+    errors.push({
+      field: 'title',
+      message,
     });
   }
   console.log(title);
@@ -166,27 +169,32 @@ async function productsPostRoute(req, res) {
     console.log(newPrice);
     console.log(typeof price);
     console.log(typeof newPrice);
-    
-    return res.status(400).json({
-      errors: [{ field: 'price', message }],
+    errors.push({
+      field: 'price',
+      message,
     });
   }
   
   if (typeof description !== 'string') {
     const message = 'Description is required and must be a text';
-    return res.status(400).json({
-      errors: [{ field: 'description', message }],
+    errors.push({
+      field: 'description',
+      message,
     });
   }
   console.log(description);
   if (typeof newCat !== 'number') {
     const message = 'CategoryId is required and must be a number';
-    return res.status(400).json({
-      errors: [{ field: 'CategoryId', message }],
+    errors.push({
+      field: 'categoryid',
+      message,
     });
   }
   console.log(newCat);
-  
+
+  if (errors.length > 0) {
+    return res.status(400).json(errors);
+  }
 
   let upload = null;
 
