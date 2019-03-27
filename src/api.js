@@ -47,18 +47,18 @@ function listOfUrls(req, res) {
     login: '/users/login',
     register: '/users/register',
     users: '/users/',
-    user: '/users/:id',
+    user: '/users/{id}',
     me: '/users/me',
     products: '/products',
     productcategory: '/products?category={category}',
     searchproduct: '/products?search={query}',
-    product: '/products/:id',
+    product: '/products/{id}',
     categories: '/categories',
-    category: '/categories/:id',
+    category: '/categories/{id}',
     cart: '/cart',
-    cartline: '/cart/line/:id',
+    cartline: '/cart/line/{id}',
     orders: '/orders',
-    order: '/orders/:id',
+    order: '/orders/{id}',
   });
 }
 
