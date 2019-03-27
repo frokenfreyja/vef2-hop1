@@ -2,7 +2,7 @@
 const xss = require('xss');
 const multer = require('multer');
 
-const uploads = multer({ dest: './temp' })
+const uploads = multer({ dest: './temp' });
 const cloudinary = require('cloudinary');
 const {
   query,
@@ -176,10 +176,6 @@ async function productsPostRoute(req, res, next) {
   }
 
   const errors = [];
-  
-  // Athugum hvort categoryid er til - ef ekki er result falsy
-  const p = 'SELECT * FROM categories WHERE categoryid = $1';
-  const found = await query(p, [categoryid]);
 
   // Athugum hvort categoryid er til - ef ekki er result falsy
   const p = 'SELECT * FROM categories WHERE categoryid = $1';
@@ -213,7 +209,7 @@ async function productsPostRoute(req, res, next) {
     });
   }
   console.log(description);
-  
+
   if (found.rows.length === 0) {
     const message = 'CategoryId does not exist';
     errors.push({
@@ -221,7 +217,7 @@ async function productsPostRoute(req, res, next) {
       message,
     });
   }
-  
+
   if (typeof newCat !== 'number') {
     const message = 'CategoryId is required and must be a number';
     errors.push({
