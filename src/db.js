@@ -36,7 +36,12 @@ async function query(sqlQuery, values = []) {
   return result;
 }
 
-async function paged(sqlQuery, { route = '', offset = 0, limit = 10, values = [] }) {
+async function paged(sqlQuery, {
+  route = '',
+  offset = 0,
+  limit = 10,
+  values = [],
+}) {
   const sqlLimit = values.length + 1;
   const sqlOffset = values.length + 2;
   const pagedQuery = `${sqlQuery} LIMIT $${sqlLimit} OFFSET $${sqlOffset}`;
@@ -77,7 +82,13 @@ async function paged(sqlQuery, { route = '', offset = 0, limit = 10, values = []
   };
 }
 
-async function updateProduct(id, { title, price, description, categoryid, image }) {
+async function updateProduct(id, {
+  title,
+  price,
+  description,
+  categoryid,
+  image,
+}) {
   const result = await query('SELECT * FROM products where productid = $1', [id]);
 
   if (result.rows.length === 0) {

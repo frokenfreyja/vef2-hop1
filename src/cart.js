@@ -74,7 +74,7 @@ async function cartPostRoute(req, res) {
   let cart = await query(`
   SELECT cart.*
   FROM cart
-  WHERE userid = $1
+  WHERE userid = $1 AND ordered = false
   `, [userid]);
 
   // Buum til körfu fyrir user ef hun er ekki til
@@ -205,7 +205,8 @@ async function ordersRoute(req, res) {
 
     return res.json(orders.rows);
   }
-  // Ef notandi er admin þa birta allar pantanir
+
+  // Ef notandi er admin þá birta allar pantanir
   const orders = await paged('SELECT * FROM cart ORDER BY created DESC', { route, offset, limit });
 
   if (orders === 0) {
@@ -214,6 +215,22 @@ async function ordersRoute(req, res) {
   return res.json(orders);
 }
 
+/*
+async function ordersToCartRoute(req, res) {
+  const { userid } = req.user;
+
+  const user = await findUserById(userid);
+
+  if (user === null) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  // Finna körfu þar sem að userid = userid
+  // Ef hann á körfu þ.e. skilar > 0 þá athuga hvort að innihald sé > 0
+  // Ef svo er búa til körfu úr pöntun
+
+} */
+
 module.exports = {
   cartRoute,
   cartPostRoute,
@@ -221,4 +238,5 @@ module.exports = {
   cartLinePatchRoute,
   cartLineDeleteRoute,
   ordersRoute,
+  // ordersToCartRoute,
 };

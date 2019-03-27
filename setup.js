@@ -15,6 +15,8 @@ const readFileAsync = util.promisify(fs.readFile);
  * Setur upp gagnagrunn og bætir við gögnum
  */
 async function main() {
+  const departmts = [];
+  const products = [];
   console.info(`Set upp gagnagrunn á ${connectionString}`);
   // droppa töflum ef til
   await query('DROP TABLE IF EXISTS categories cascade');
@@ -44,34 +46,35 @@ async function main() {
   }
 
   /* Setur inn í töflurnar categories og products */
-  var departmts = [];
-  while(departmts.length < 12) {
+  while (departmts.length < 12) {
     const departmt = faker.commerce.department();
-    if(departmts.indexOf(departmt) === -1) {
+    if (departmts.indexOf(departmt) === -1) {
       departmts.push(departmt);
       const q = 'INSERT INTO categories (title) VALUES ($1)';
+      // eslint-disable-next-line no-await-in-loop
       await query(q, [departmt]);
-    } 
+    }
   }
 
-  var products = [];
-  while(products.length < 1000) {
+  while (products.length < 1000) {
     const product = faker.commerce.productName();
-    if(products.indexOf(product) === -1) {
+    if (products.indexOf(product) === -1) {
       products.push(product);
       const price = Math.round(faker.commerce.price());
       const description = faker.lorem.sentence();
       const department = departmts[Math.floor(Math.random() * departmts.length)];
       const q1 = 'SELECT categoryid FROM categories WHERE title = $1';
+      // eslint-disable-next-line no-await-in-loop
       const category = await query(q1, [department]);
       const q2 = 'INSERT INTO products (categoryid, title, price, description) VALUES ($1, $2, $3, $4)';
       const prodValues = [category.rows[0].categoryid, product, price, description];
 
+      // eslint-disable-next-line no-await-in-loop
       await query(q2, prodValues);
-    } 
+    }
   }
+  // eslint-disable-next-line no-console
   console.log('komið');
-
 }
 
 
