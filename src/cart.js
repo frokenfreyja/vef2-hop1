@@ -10,7 +10,7 @@ const { findUserById } = require('./users');
  * @param {Number} amount heildarverð körfu
  * @returns {array} Fylki af villum sem komu upp, tómt ef engin villa
  */
-async function validateCart({ productid, amount }) {
+async function validateCart(productid, amount) {
   const messages = [];
 
   if (!productid || !Number.isInteger(Number(productid))) {
@@ -51,7 +51,7 @@ async function cartRoute(req, res) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  const cart = await paged(`
+  const cart = await query(`
     SELECT products.*, cart_products.amount, cart_products.cartid
     FROM products
     INNER JOIN cart_products 
@@ -66,7 +66,7 @@ async function cartRoute(req, res) {
   }
 
   const price = await query(`
-    SELECT SUM(price)
+    SELECT SUM(price * amount)
     FROM products
     INNER JOIN cart_products 
         ON products.productid = cart_products.productid
@@ -75,7 +75,7 @@ async function cartRoute(req, res) {
     WHERE userid = $1
     `, [userid]);
 
-  return res.json({ cart, totalPrice: price.rows[0] });
+  return res.json({ cart: cart.rows, totalPrice: price.rows[0] });
 }
 
 /**
@@ -115,8 +115,9 @@ async function cartPostRoute(req, res) {
     const q = `
     INSERT INTO
       cart_products(cartid, productid, amount)
+    WHERE productid = $1
     VALUES
-      ($1, $2, $3)
+      ($2, $3, $4)
     RETURNING *
     `;
 
@@ -126,7 +127,9 @@ async function cartPostRoute(req, res) {
       return res.status(400).json({ errors: validationMessage });
     }
 
-    const values = [xss(cart.rows[0].cartid), xss(req.body.productid), xss(req.body.amount)];
+
+    const values = [req.body.productid,
+      xss(cart.rows[0].cartid), xss(req.body.productid), xss(req.body.amount)];
     const result = await query(q, values);
     return res.status(201).json(result.rows[0]);
   }
