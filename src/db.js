@@ -82,13 +82,7 @@ async function paged(sqlQuery, {
   };
 }
 
-async function updateProduct(id, {
-  title,
-  price,
-  description,
-  categoryid,
-  image,
-}) {
+async function updateProduct(id, item) {
   const result = await query('SELECT * FROM products where productid = $1', [id]);
 
   if (result.rows.length === 0) {
@@ -99,12 +93,12 @@ async function updateProduct(id, {
     };
   }
 
-  const validationResult = await validateProduct({
-    title,
-    price,
-    description,
-    categoryid,
-  });
+  const validationResult = await validateProduct(
+    item.title,
+    item.price,
+    item.description,
+    item.categoryid,
+  );
 
   if (validationResult.length > 0) {
     return {
@@ -115,19 +109,19 @@ async function updateProduct(id, {
   }
 
   const changedColumns = [
-    !isEmpty(title) ? 'title' : null,
-    !isEmpty(price) ? 'price' : null,
-    !isEmpty(description) ? 'description' : null,
-    !isEmpty(categoryid) ? 'categoryid' : null,
-    !isEmpty(image) ? 'image' : null,
+    !isEmpty(item.title) ? 'title' : null,
+    !isEmpty(item.price) ? 'price' : null,
+    !isEmpty(item.description) ? 'description' : null,
+    !isEmpty(item.categoryid) ? 'categoryid' : null,
+    !isEmpty(item.image) ? 'image' : null,
   ].filter(Boolean);
 
   const changedValues = [
-    !isEmpty(title) ? xss(title) : null,
-    !isEmpty(price) ? xss(price) : null,
-    !isEmpty(description) ? xss(description) : null,
-    !isEmpty(categoryid) ? xss(categoryid) : null,
-    !isEmpty(image) ? xss(image) : null,
+    !isEmpty(item.title) ? xss(item.title) : null,
+    !isEmpty(item.price) ? xss(item.price) : null,
+    !isEmpty(item.description) ? xss(item.description) : null,
+    !isEmpty(item.categoryid) ? xss(item.categoryid) : null,
+    !isEmpty(item.image) ? xss(item.image) : null,
   ].filter(Boolean);
 
   const updates = [id, ...changedValues];

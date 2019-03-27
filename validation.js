@@ -1,4 +1,4 @@
-const { query } = require('./src/db');
+// const { query } = require('./src/db');
 
 const invalidField = (s, maxlen) => {
   if (s !== undefined && typeof s !== 'string') {
@@ -16,12 +16,12 @@ function isEmpty(s) {
   return s == null && !s;
 }
 
-async function validateProduct({
+async function validateProduct(
   title,
   price,
   description,
   categoryid,
-} = {}) {
+) {
   const messages = [];
 
 
@@ -42,7 +42,7 @@ async function validateProduct({
       });
     }
   }
- 
+
   if (!isEmpty(description)) {
     if (typeof description !== 'string') {
       messages.push({
@@ -51,7 +51,7 @@ async function validateProduct({
       });
     }
   }
- 
+
   if (!isEmpty(categoryid)) {
     if (typeof categoryid !== 'number' || categoryid > 12 || categoryid < 1) {
       messages.push({
@@ -61,7 +61,6 @@ async function validateProduct({
     }
   }
 
-  
   return messages;
 }
 
@@ -97,4 +96,5 @@ module.exports = {
   validateProduct,
   validateCategory,
   validateCartLine,
+  invalidField,
 };
