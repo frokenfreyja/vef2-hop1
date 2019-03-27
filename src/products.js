@@ -1,8 +1,16 @@
+/* eslint-disable no-console */
 const xss = require('xss');
-const { query, paged, createProduct, updateProduct, updateCategory } = require('./db');
 const multer = require('multer');
-const uploads = multer({ dest: './temp'})
+
+const uploads = multer({ dest: './temp' });
 const cloudinary = require('cloudinary');
+const {
+  query,
+  paged,
+  // createProduct,
+  updateProduct,
+  updateCategory,
+} = require('./db');
 
 const {
   CLOUDINARY_CLOUD,
@@ -23,9 +31,9 @@ cloudinary.config({
 
 
 async function categoriesRoute(req, res) {
-  const { offset = 0, limit = 10 } = req.query;
+  const { route = 'categories', offset = 0, limit = 10 } = req.query;
 
-  const categories = await paged('SELECT * FROM categories', { offset, limit });
+  const categories = await paged('SELECT * FROM categories', { route, offset, limit });
 
   return res.json(categories);
 }
@@ -88,6 +96,7 @@ async function categoriesDeleteRoute(req, res) {
 
 async function productsRoute(req, res) {
   const {
+    route = 'products',
     offset = 0,
     limit = 10,
     search = '',
@@ -131,15 +140,29 @@ async function productsRoute(req, res) {
     values.push(category);
   }
 
-  const products = await paged(q, { offset, limit, values });
+  const products = await paged(q, {
+    route,
+    offset,
+    limit,
+    values,
+  });
   return res.json(products);
 }
 
-async function productsPostRoute(req, res) {  
-  const { title, price, description, categoryid, image } = req.body;
+
+async function productsPostRoute(req, res, next) {
+  const {
+    title,
+    price,
+    description,
+    categoryid,
+    // image,
+  } = req.body;
   const { file: { path, mimetype } = {} } = req;
-  
+
+  // eslint-disable-next-line radix
   const newPrice = parseInt(price);
+  // eslint-disable-next-line radix
   const newCat = parseInt(categoryid);
   console.log('path', path);
   console.log('mimitype', mimetype);
@@ -148,44 +171,68 @@ async function productsPostRoute(req, res) {
   const fileType = splitMimeArray.pop();
   const types = ['jpeg', 'jpg', 'png', 'gif'];
 
-  if(types.indexOf(fileType) === -1) {
+  if (types.indexOf(fileType) === -1) {
     return res.status(400).json({ error: 'The file is not in the right format' });
   }
 
+  const errors = [];
+
+  // Athugum hvort categoryid er til - ef ekki er result falsy
+  const p = 'SELECT * FROM categories WHERE categoryid = $1';
+  const found = await query(p, [categoryid]);
+
   if (typeof title !== 'string' || title.length === 0 || title.length > 255) {
     const message = 'Title is required, must not be empty or longar than 255 characters';
-    return res.status(400).json({
-      errors: [{ field: 'title', message }],
+    errors.push({
+      field: 'title',
+      message,
     });
   }
 
   if (typeof newPrice !== 'number') {
-    const message = 'Price is required and must be a number';  
-    return res.status(400).json({
-      errors: [{ field: 'price', message }],
+    const message = 'Price is required and must be a number';
+    errors.push({
+      field: 'price',
+      message,
     });
   }
-  
+
   if (typeof description !== 'string') {
     const message = 'Description is required and must be a text';
-    return res.status(400).json({
-      errors: [{ field: 'description', message }],
+    errors.push({
+      field: 'description',
+      message,
     });
   }
   console.log(description);
+
+  if (found.rows.length === 0) {
+    const message = 'CategoryId does not exist';
+    errors.push({
+      field: 'categoryid',
+      message,
+    });
+  }
+
   if (typeof newCat !== 'number') {
     const message = 'CategoryId is required and must be a number';
-    return res.status(400).json({
-      errors: [{ field: 'CategoryId', message }],
+    errors.push({
+      field: 'categoryid',
+      message,
     });
   }
   console.log(newCat);
-  
+
+  if (errors.length > 0) {
+    return res.status(400).json(errors);
+  }
 
   let upload = null;
 
   try {
-    upload = await cloudinary.v2.uploader.upload(path, allowed_formats = ['gif','jpg', 'png']);
+    // eslint-disable-next-line camelcase
+    const allowed_formats = ['gif', 'jpg', 'png'];
+    upload = await cloudinary.v2.uploader.upload(path, allowed_formats);
   } catch (error) {
     if (error.http_code && error.http_code === 400) {
       return res.status(400).json({ error: error.message });
@@ -195,8 +242,15 @@ async function productsPostRoute(req, res) {
     return next(error);
   }
 
-  const q = 'INSERT INTO products (title, price, description, categoryid, image) VALUES ($1, $2, $3, $4, $5) RETURNING *';
-  const result = await query(q, [xss(title),xss(newPrice),xss(description), xss(newCat), upload.secure_url]);
+  const q = `
+    INSERT INTO products 
+    (title, price, description, categoryid, image)
+    VALUES
+    ($1, $2, $3, $4, $5)
+    RETURNING *
+  `;
+  const result = await query(q,
+    [xss(title), xss(newPrice), xss(description), xss(newCat), upload.secure_url]);
 
   return res.status(201).json(result.rows);
 }
@@ -224,9 +278,14 @@ async function productRoute(req, res) {
   return res.json(product.rows[0]);
 }
 
-async function productPatchRoute(req, res) {
+async function productPatchRoute(req, res, next) {
   const { id } = req.params;
-  const { title, price, description, categoryid } = req.body;
+  const {
+    title,
+    price,
+    description,
+    categoryid,
+  } = req.body;
   const { file: { path, mimetype } = {} } = req;
   console.log('path:', path);
 
@@ -235,14 +294,16 @@ async function productPatchRoute(req, res) {
   console.log(fileType);
   const types = ['jpeg', 'png', 'gif'];
 
-  if(types.indexOf(fileType) === -1) {
+  if (types.indexOf(fileType) === -1) {
     return res.status(400).json({ error: 'The file is not in the right format' });
   }
 
   let upload = null;
 
   try {
-    upload = await cloudinary.v2.uploader.upload(path, allowed_formats = ['gif','jpg', 'png']);
+    // eslint-disable-next-line camelcase
+    const allowed_formats = ['gif', 'jpg', 'png'];
+    upload = await cloudinary.v2.uploader.upload(path, allowed_formats);
   } catch (error) {
     if (error.http_code && error.http_code === 400) {
       return res.status(400).json({ error: error.message });
@@ -254,7 +315,13 @@ async function productPatchRoute(req, res) {
 
   const url = upload.secure_url;
 
-  const result = await updateProduct(id, { title, price, description, categoryid, url });
+  const result = await updateProduct(id, {
+    title,
+    price,
+    description,
+    categoryid,
+    url,
+  });
 
   if (!result.success && result.validation.length > 0) {
     return res.status(400).json(result.validation);
@@ -324,5 +391,5 @@ module.exports = {
   productPatchRoute,
   productDeleteRoute,
   productsImageRouteWithMulter,
-  productsImagePatchRouteWithMulter
+  productsImagePatchRouteWithMulter,
 };

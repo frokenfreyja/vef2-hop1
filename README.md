@@ -11,8 +11,13 @@
   * PORT - sem vefurinn á að vera keyrður á
   * HOST - sem vefurinn á að vera keyrður á
   * JWT_SECRET sem er leyndarmál sem notað er í undirskrift á token
-3. Keyra þarf skipunina 'npm run setup -s' í verkefnamöppu sem setur upp töflur og setur gögn í þær
-4. Keyra þarf skipunina 'npm start' í verkefnamöppu 
+  * CLOUDINARY_URL, stilling fyrir cloudinary, fengin úr cloudinary console
+  * CLOUDINARY_CLOUD, stilling fyrir cloudinary, fengin úr cloudinary console
+  * CLOUDINARY_API_KEY, stilling fyrir cloudinary, fengin úr cloudinary console
+  * CLOUDINARY_API_SECRET, stilling fyrir cloudinary, fengin úr cloudinary console
+3. Keyra þarf skipunina 'npm install' til þess að ná í alla pakka 
+4. Keyra þarf skipunina 'npm run setup -s' í verkefnamöppu sem setur upp töflur og setur gögn í þær
+5. Keyra þarf skipunina 'npm start' í verkefnamöppu
 
 ## Dæmi um köll í vefþjónustu
 

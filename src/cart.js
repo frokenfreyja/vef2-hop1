@@ -1,5 +1,5 @@
 const xss = require('xss');
-const { query, updateCartLine } = require('../src/db');
+const { query, paged, updateCartLine } = require('../src/db');
 const { findUserById } = require('./users');
 
 async function validateCart({ productid, amount }) {
@@ -25,6 +25,8 @@ async function validateCart({ productid, amount }) {
 }
 
 async function cartRoute(req, res) {
+  const { route = 'cart', offset = 0, limit = 10 } = req.query;
+
   const { userid } = req.user;
 
   const user = await findUserById(userid);
@@ -33,7 +35,7 @@ async function cartRoute(req, res) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  const cart = await query(`
+  const cart = await paged(`
     SELECT products.*, cart_products.amount, cart_products.cartid
     FROM products
     INNER JOIN cart_products 
@@ -41,22 +43,23 @@ async function cartRoute(req, res) {
     INNER JOIN cart 
         ON cart_products.cartid = cart.cartid
     WHERE userid = $1
-    `, [userid]);
+    `, [userid], { route, offset, limit });
 
-  if (cart.rows.length === 0) {
+  if (cart === 0) {
     return res.status(404).json({ error: 'Cart not found' });
   }
+
   const price = await query(`
     SELECT SUM(price)
     FROM products
     INNER JOIN cart_products 
         ON products.productid = cart_products.productid
-    INNER JOIN cart 
+    INNER JOIN cart
         ON cart_products.cartid = cart.cartid
     WHERE userid = $1
     `, [userid]);
 
-  return res.json({ cart: cart.rows, totalPrice: price.rows[0] });
+  return res.json({ cart, totalPrice: price.rows[0] });
 }
 
 async function cartPostRoute(req, res) {
@@ -68,17 +71,17 @@ async function cartPostRoute(req, res) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  // Sækjum körfu
+  // Sækjum körfu sem er ekki pöntuð
   let cart = await query(`
   SELECT cart.*
   FROM cart
-  WHERE userid = $1
+  WHERE userid = $1 AND ordered = '0'
   `, [userid]);
 
-  // Buum til körfu fyrir user ef hun er ekki til
+  // Búum til körfu fyrir user ef hún er ekki til
   if (cart.rows.length === 0) {
     cart = await query(`
-      INSERT INTO 
+      INSERT INTO
         cart(userid)
       VALUES
         ($1)
@@ -178,6 +181,8 @@ async function cartLineDeleteRoute(req, res) {
 }
 
 async function ordersRoute(req, res) {
+  const { route = 'orders', offset = 0, limit = 10 } = req.query;
+
   const { userid } = req.user;
 
   const user = await findUserById(userid);
@@ -191,7 +196,7 @@ async function ordersRoute(req, res) {
     const orders = await query(`
     SELECT *
     FROM cart
-    WHERE userid = $1
+    WHERE userid = $1 AND ordered = '0'
     ORDER BY created DESC
     `, [userid]);
 
@@ -201,14 +206,44 @@ async function ordersRoute(req, res) {
 
     return res.json(orders.rows);
   }
-  // Ef notandi er admin þa birta allar pantanir
-  const orders = await query('SELECT * FROM cart ORDER BY created DESC');
 
-  if (orders.rows.length === 0) {
+  // Ef notandi er admin þá birta allar pantanir
+  const orders = await paged('SELECT * FROM cart ORDER BY created DESC', { route, offset, limit });
+
+  if (orders === 0) {
     return res.status(404).json({ error: 'Order not found' });
   }
-  return res.json(orders.rows);
+  return res.json(orders);
 }
+
+/*
+async function ordersToCartRoute(req, res) {
+  const { userid } = req.user;
+
+  const user = await findUserById(userid);
+
+  if (user === null) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  // Finna körfu(ordered=0) þar sem að userid = userid
+  const orders = await query(`
+    SELECT *
+    FROM cart
+    WHERE userid = $1 AND ordered = '0'
+    ORDER BY created DESC
+    `, [userid]);
+
+  console.log(orders);
+  console.log(orders.rows);
+  console.log(orders.rows.length);
+  // Ef hann á körfu þ.e. skilar > 0 þá athuga hvort að innihald sé > 0
+  if (orders.rows.length > 0) {
+    return true;
+  }
+  return false;
+  // Ef svo er búa til körfu úr pöntun
+} */
 
 module.exports = {
   cartRoute,
@@ -217,4 +252,5 @@ module.exports = {
   cartLinePatchRoute,
   cartLineDeleteRoute,
   ordersRoute,
+  // ordersToCartRoute,
 };

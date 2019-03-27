@@ -16,9 +16,9 @@ const {
   categoriesPatchRoute,
   categoriesDeleteRoute,
   productsRoute,
-  productsPostRoute,
+  // productsPostRoute,
   productRoute,
-  productPatchRoute,
+  // productPatchRoute,
   productDeleteRoute,
   productsImageRouteWithMulter,
   productsImagePatchRouteWithMulter,
@@ -31,6 +31,7 @@ const {
   cartLinePatchRoute,
   cartLineDeleteRoute,
   ordersRoute,
+  ordersToCartRoute,
 } = require('./cart');
 
 const router = express.Router();
@@ -195,7 +196,6 @@ async function patchMyInfo(req, res) {
 }
 
 
-
 router.get('/', listOfUrls);
 router.get('/users/', requireAuthenticationAsAdmin, catchErrors(getUsers));
 router.get('/users/me', requireAuthentication, catchErrors(getMyInfo));
@@ -224,5 +224,6 @@ router.patch('/cart/line/:id', requireAuthentication, catchErrors(cartLinePatchR
 router.delete('/cart/line/:id', requireAuthentication, catchErrors(cartLineDeleteRoute));
 
 router.get('/orders', requireAuthentication, catchErrors(ordersRoute));
+router.post('/orders', requireAuthentication, catchErrors(ordersToCartRoute));
 
 module.exports = router;
