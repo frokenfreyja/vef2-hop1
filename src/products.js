@@ -29,7 +29,13 @@ cloudinary.config({
 });
 
 
-
+/**
+ * Skilar lista af Categories 
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
+ * @returns {array} Fylki af Categories
+ */
 async function categoriesRoute(req, res) {
   const { route = 'categories', offset = 0, limit = 10 } = req.query;
 
@@ -38,6 +44,13 @@ async function categoriesRoute(req, res) {
   return res.json(categories);
 }
 
+/**
+ * Býr til nýjan flokk og vistar í gagnagrunni ef að upplýsingar um hann eru gildar
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
+ * @returns {Result} Niðurstaða þess að búa til Category
+ */
 async function categoriesPostRoute(req, res) {
   const { title } = req.body;
 
@@ -61,6 +74,14 @@ async function categoriesPostRoute(req, res) {
   return res.status(201).json(result.rows[0]);
 }
 
+/**
+ * Uppfærir stakan flokk eftir id ef upplýsingarnar eru á réttu formi og vistar
+ * í gagnagrunni
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
+ * @returns {object} Category uppfærðum flokki
+ */
 async function categoriesPatchRoute(req, res) {
   const { id } = req.params;
   const { title } = req.body;
@@ -78,6 +99,12 @@ async function categoriesPatchRoute(req, res) {
   return res.status(201).json(result.item);
 }
 
+/**
+ * Eyðir flokki úr gagnagrunni eftir id ef flokkurinn er til
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
+ */
 async function categoriesDeleteRoute(req, res) {
   const { id } = req.params;
 
@@ -94,6 +121,13 @@ async function categoriesDeleteRoute(req, res) {
   return res.status(404).json({ error: 'Category not found' });
 }
 
+/**
+ * Skilar lista af Products 
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
+ * @returns {array} Fylki af Products
+ */
 async function productsRoute(req, res) {
   const {
     route = 'products',
@@ -150,6 +184,13 @@ async function productsRoute(req, res) {
 }
 
 
+/**
+ * Býr til nýja vöru og vistar í gagnagrunni ef að upplýsingar um hana eru gildar
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
+ * @returns {Result} Niðurstaða þess að búa til Product
+ */
 async function productsPostRoute(req, res, next) {
   const {
     title,
@@ -250,6 +291,13 @@ async function productsPostRoute(req, res, next) {
   return res.status(201).json(result.rows);
 }
 
+/**
+ * Sækir staka vöru úr gagnagrunni eftir id ef varan er til 
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
+ * @returns {Object} Product eða null ef ekkert fannst
+ */
 async function productRoute(req, res) {
   const { id } = req.params;
 
@@ -269,10 +317,18 @@ async function productRoute(req, res) {
     return res.status(404).json({ error: 'Product not found' });
   }
 
-
   return res.json(product.rows[0]);
 }
 
+
+/**
+ * Uppfærir staka vöru eftir id ef upplýsingarnar eru á réttu formi og vistar
+ * í gagnagrunni
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
+ * @returns {object} Product uppfærðri vöru
+ */
 async function productPatchRoute(req, res, next) {
   const { id } = req.params;
   const {
@@ -382,7 +438,12 @@ async function productPatchRoute(req, res, next) {
   return res.status(201).json(result.item);
 }
 
-
+/**
+ * Eyðir vöru úr gagnagrunni eftir id ef varan er til
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
+ */
 async function productDeleteRoute(req, res) {
   const { productid } = req.params;
 
@@ -400,6 +461,14 @@ async function productDeleteRoute(req, res) {
 }
 
 
+/**
+ * Middleware sem tekur við form-data og upload-ar mynd ef hún fylgir nýrri vöru
+ * 
+ * @module Multer
+ * @function
+ * @param {Object} req 
+ * @param {Object} res 
+ */
 async function productsImageRouteWithMulter(req, res, next) {
   uploads.single('image')(req, res, (err) => {
     if (err) {
@@ -414,6 +483,14 @@ async function productsImageRouteWithMulter(req, res, next) {
   });
 }
 
+/**
+ * Middleware sem tekur við form-data og upload-ar mynd ef verið er að uppfæra mynd vöru
+ * 
+ * @module Multer
+ * @function
+ * @param {Object} req 
+ * @param {Object} res 
+ */
 async function productsImagePatchRouteWithMulter(req, res, next) {
   uploads.single('image')(req, res, (err) => {
     if (err) {
