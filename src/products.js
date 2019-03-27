@@ -206,7 +206,7 @@ async function productsPostRoute(req, res, next) {
   const newCat = parseInt(categoryid);
 
   /* Athugar og setur skorður á format á mynd sem er hlaðið upp */
-  
+
   const splitMimeArray = mimetype.split('/');
   const fileType = splitMimeArray.pop();
   const types = ['jpeg', 'jpg', 'png', 'gif'];
@@ -339,40 +339,38 @@ async function productPatchRoute(req, res, next) {
     categoryid,
   } = req.body;
   const { file: { path, mimetype } = {} } = req;
+  let url;
 
-  // eslint-disable-next-line radix
-  const newPrice = parseInt(price);
-  // eslint-disable-next-line radix
-  const newCat = parseInt(categoryid);
+  if (req.file) {
+    const splitMimeArray = mimetype.split('/');
+    const fileType = splitMimeArray.pop();
+    const types = ['jpeg', 'png', 'gif'];
 
-  const splitMimeArray = mimetype.split('/');
-  const fileType = splitMimeArray.pop();
-  const types = ['jpeg', 'png', 'gif'];
-
-  if (types.indexOf(fileType) === -1) {
-    return res.status(400).json({ error: 'The file is not in the right format' });
-  }
-  
-  let upload = null;
-
-  try {
-    upload = await cloudinary.v2.uploader.upload(path);
-  } catch (error) {
-    if (error.http_code && error.http_code === 400) {
-      return res.status(400).json({ error: error.message });
+    if (types.indexOf(fileType) === -1) {
+      return res.status(400).json({ error: 'The file is not in the right format' });
     }
 
-    console.error('Unable to upload file to cloudinary:', path);
-    return next(error);
-  }
+    let upload = null;
 
-  const url = upload.secure_url;
+    try {
+      upload = await cloudinary.v2.uploader.upload(path);
+    } catch (error) {
+      if (error.http_code && error.http_code === 400) {
+        return res.status(400).json({ error: error.message });
+      }
+
+      console.error('Unable to upload file to cloudinary:', path);
+      return next(error);
+    }
+
+    url = upload.secure_url;
+  }
 
   const result = await updateProduct(id, {
     title,
-    newPrice,
+    price,
     description,
-    newCat,
+    categoryid,
     url,
   });
 
