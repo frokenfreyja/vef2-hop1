@@ -149,11 +149,15 @@ async function productsPostRoute(req, res) {
   console.log(typeof fileType);
   const types = ['jpeg', 'jpg', 'png', 'gif'];
 
-  if(types.indexOf(fileType) === -1) {
+  if (types.indexOf(fileType) === -1) {
     return res.status(400).json({ error: 'The file is not in the right format' });
   }
 
   const errors = [];
+  
+  // Athugum hvort categoryid er til - ef ekki er result falsy
+  const p = 'SELECT * FROM categories WHERE categoryid = $1';
+  const found = await query(p, [categoryid]);
 
   if (typeof title !== 'string' || title.length === 0 || title.length > 255) {
     const message = 'Title is required, must not be empty or longar than 255 characters';
@@ -183,6 +187,15 @@ async function productsPostRoute(req, res) {
     });
   }
   console.log(description);
+  
+  if (found.rows.length === 0) {
+    const message = 'CategoryId does not exist';
+    errors.push({
+      field: 'categoryid',
+      message,
+    });
+  }
+  
   if (typeof newCat !== 'number') {
     const message = 'CategoryId is required and must be a number';
     errors.push({
