@@ -8,12 +8,13 @@ const cloudinary = require('cloudinary');
 const path = require('path');
 
 
-
 const { query } = require('./src/db');
 
 const connectionString = process.env.DATABASE_URL;
 
 const readFileAsync = util.promisify(fs.readFile);
+const readdirAsync = util.promisify(fs.readdir);
+
 
 const {
   CLOUDINARY_CLOUD,
@@ -65,27 +66,35 @@ async function main() {
   } catch (e) {
     console.error('Villa við að bæta gögnum við:', e.message);
   }
-  
-  /* Setur myndirnar úr public/img inn á cloudinary */
-  const images = fs.readdirSync("./public/img/").filter(function(file) {
-    if(file.indexOf(".jpg")>-1) return file;
-  })
-  console.log('images:', images);
+
+  /* Setur myndirnar úr public/img inn á cloudinary *//*
+  const images = fs.readdirSync('./public/img/').filter(function(file) {
+    if (file.indexOf('.jpg') > -1) return file;
+  });
+
+  */
+  function getImageFolder() {
+    return path.join(__dirname, './public/img/');
+  }
+
+  // skilar fylki af öllum myndunum í myndmöppunni
+  async function getAllImages() {
+    const dirPath = getImageFolder();
+    const filesToReturn = await readdirAsync(dirPath);
+    return filesToReturn;
+  }
+
+  const imgImages = await getAllImages();
 
   let upload = null;
   const urls = [];
 
-  for (i = 0; i < 20; i++) { 
-    upload = await cloudinary.v2.uploader.upload('./public/img/'+images[i], 
-    function(error, result) {console.log(result, error); });
+  for (let i = 0; i < 20; i += 1) {
+    // eslint-disable-next-line no-await-in-loop
+    upload = await cloudinary.v2.uploader.upload('./public/img/' + imgImages[i],
+      function (error, result) { console.log(result, error); });
     urls.push(upload.secure_url);
   }
-
-  console.log(urls);
-  const image = urls[Math.floor(Math.random() * products.length)];
-
-
-
 
   /* Setur inn í töflurnar categories og products */
   while (departmts.length < 12) {
