@@ -1,8 +1,15 @@
 const xss = require('xss');
-const { query, paged, createProduct, updateProduct, updateCategory } = require('./db');
 const multer = require('multer');
-const uploads = multer({ dest: './temp'})
+
+const uploads = multer({ dest: './temp' })
 const cloudinary = require('cloudinary');
+const {
+  query,
+  paged,
+  createProduct,
+  updateProduct,
+  updateCategory,
+} = require('./db');
 
 const {
   CLOUDINARY_CLOUD,
@@ -135,7 +142,13 @@ async function productsRoute(req, res) {
 }
 
 async function productsPostRoute(req, res) {  
-  const { title, price, description, categoryid, image } = req.body;
+  const {
+    title,
+    price,
+    description,
+    categoryid,
+    image,
+  } = req.body;
   const { file: { path, mimetype } = {} } = req;
   
   const newPrice = parseInt(price);
@@ -262,7 +275,7 @@ async function productPatchRoute(req, res) {
   console.log(fileType);
   const types = ['jpeg', 'png', 'gif'];
 
-  if(types.indexOf(fileType) === -1) {
+  if (types.indexOf(fileType) === -1) {
     return res.status(400).json({ error: 'The file is not in the right format' });
   }
 
