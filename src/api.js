@@ -210,10 +210,10 @@ router.patch('/categories/:id', requireAuthenticationAsAdmin, catchErrors(catego
 router.delete('/categories/:id', requireAuthenticationAsAdmin, catchErrors(categoriesDeleteRoute));
 
 router.get('/products', catchErrors(productsRoute));
-router.post('/products', catchErrors(productsImageRouteWithMulter));
+router.post('/products', requireAuthenticationAsAdmin, catchErrors(productsImageRouteWithMulter));
 
 router.get('/products/:id', catchErrors(productRoute));
-router.patch('/products/:id', catchErrors(productsImagePatchRouteWithMulter));
+router.patch('/products/:id',requireAuthenticationAsAdmin, catchErrors(productsImagePatchRouteWithMulter));
 router.delete('/products/:id', requireAuthenticationAsAdmin, catchErrors(productDeleteRoute));
 
 router.get('/cart', requireAuthentication, catchErrors(cartRoute));

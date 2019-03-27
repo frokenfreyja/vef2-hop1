@@ -4,12 +4,33 @@ require('dotenv').config();
 const fs = require('fs');
 const util = require('util');
 const faker = require('faker');
+const cloudinary = require('cloudinary');
+const path = require('path');
+
+
 
 const { query } = require('./src/db');
 
 const connectionString = process.env.DATABASE_URL;
 
 const readFileAsync = util.promisify(fs.readFile);
+
+const {
+  CLOUDINARY_CLOUD,
+  CLOUDINARY_API_KEY,
+  CLOUDINARY_API_SECRET,
+} = process.env;
+
+if (!CLOUDINARY_CLOUD || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
+  console.warn('Missing cloudinary config, uploading images will not work');
+}
+
+cloudinary.config({
+  cloud_name: CLOUDINARY_CLOUD,
+  api_key: CLOUDINARY_API_KEY,
+  api_secret: CLOUDINARY_API_SECRET,
+});
+
 
 /**
  * Setur upp gagnagrunn og bætir við gögnum
@@ -44,6 +65,27 @@ async function main() {
   } catch (e) {
     console.error('Villa við að bæta gögnum við:', e.message);
   }
+  
+  /* Setur myndirnar úr public/img inn á cloudinary */
+  const images = fs.readdirSync("./public/img/").filter(function(file) {
+    if(file.indexOf(".jpg")>-1) return file;
+  })
+  console.log('images:', images);
+
+  let upload = null;
+  const urls = [];
+
+  for (i = 0; i < 20; i++) { 
+    upload = await cloudinary.v2.uploader.upload('./public/img/'+images[i], 
+    function(error, result) {console.log(result, error); });
+    urls.push(upload.secure_url);
+  }
+
+  console.log(urls);
+  const image = urls[Math.floor(Math.random() * products.length)];
+
+
+
 
   /* Setur inn í töflurnar categories og products */
   while (departmts.length < 12) {
@@ -56,7 +98,7 @@ async function main() {
     }
   }
 
-  while (products.length < 1000) {
+  while (products.length < 20) {
     const product = faker.commerce.productName();
     if (products.indexOf(product) === -1) {
       products.push(product);
@@ -66,8 +108,9 @@ async function main() {
       const q1 = 'SELECT categoryid FROM categories WHERE title = $1';
       // eslint-disable-next-line no-await-in-loop
       const category = await query(q1, [department]);
-      const q2 = 'INSERT INTO products (categoryid, title, price, description) VALUES ($1, $2, $3, $4)';
-      const prodValues = [category.rows[0].categoryid, product, price, description];
+      const image = urls[Math.floor(Math.random() * urls.length)];
+      const q2 = 'INSERT INTO products (categoryid, title, price, description, image) VALUES ($1, $2, $3, $4, $5)';
+      const prodValues = [category.rows[0].categoryid, product, price, description, image];
 
       // eslint-disable-next-line no-await-in-loop
       await query(q2, prodValues);
