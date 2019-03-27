@@ -43,3 +43,8 @@ INSERT INTO cart_products
 (cartid, productid, amount)
 VALUES
 (1, 1, 1);
+
+INSERT INTO cart 
+(userid, ordered, name, address)
+VALUES
+(2, true, 'Freyja Sigurgisladottir', 'Grettisgata 52');
