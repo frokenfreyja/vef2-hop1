@@ -75,7 +75,7 @@ async function cartRoute(req, res) {
     WHERE userid = $1
     `, [userid]);
 
-  return res.json({ cart: cart.rows, totalPrice: price.rows[0] });
+  return res.status(201).json({ cart: cart.rows, totalPrice: price.rows[0] });
 }
 
 /**
@@ -179,7 +179,7 @@ async function cartLineRoute(req, res) {
     return res.status(404).json({ error: 'Cart product not found' });
   }
 
-  return res.json(cartLine.rows[0]);
+  return res.status(201).json(cartLine.rows[0]);
 }
 
 /**
@@ -260,7 +260,7 @@ async function ordersRoute(req, res) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    return res.json(orders.rows);
+    return res.status(201).json(orders.rows);
   }
 
   // Ef notandi er admin þá birta allar pantanir
@@ -269,7 +269,7 @@ async function ordersRoute(req, res) {
   if (orders === 0) {
     return res.status(404).json({ error: 'Order not found' });
   }
-  return res.json(orders);
+  return res.status(201).json(orders);
 }
 
 /**
