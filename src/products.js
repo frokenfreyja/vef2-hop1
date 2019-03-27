@@ -128,32 +128,42 @@ async function productsPostRoute(req, res) {
     categoryid,
   } = req.body;
 
+  const errors = [];
+
   if (typeof title !== 'string' || title.length === 0 || title.length > 255) {
     const message = 'Title is required, must not be empty or longar than 255 characters';
-    return res.status(400).json({
-      errors: [{ field: 'title', message }],
+    errors.push({
+      field: 'title',
+      message,
     });
   }
 
   if (typeof price !== 'number') {
     const message = 'Price is required and must be a number';
-    return res.status(400).json({
-      errors: [{ field: 'price', message }],
+    errors.push({
+      field: 'price',
+      message,
     });
   }
 
   if (typeof description !== 'string') {
     const message = 'Description is required and must be a text';
-    return res.status(400).json({
-      errors: [{ field: 'description', message }],
+    errors.push({
+      field: 'description',
+      message,
     });
   }
 
   if (typeof categoryid !== 'number') {
     const message = 'CategoryId is required and must be a number';
-    return res.status(400).json({
-      errors: [{ field: 'CategoryId', message }],
+    errors.push({
+      field: 'categoryid',
+      message,
     });
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json(errors);
   }
 
   const q = 'INSERT INTO products (title, price, description, categoryid) VALUES ($1, $2, $3, $4) RETURNING *';
