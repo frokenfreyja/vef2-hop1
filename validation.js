@@ -25,6 +25,11 @@ async function validateProduct(
   const messages = [];
 
 
+  // eslint-disable-next-line radix
+  const newPrice = parseInt(price);
+  // eslint-disable-next-line radix
+  const newCat = parseInt(categoryid);
+
   if (!isEmpty(title)) {
     if ((typeof title !== 'string' || title.length === 0 || title.length > 255)) {
       messages.push({
@@ -34,8 +39,8 @@ async function validateProduct(
     }
   }
 
-  if (!isEmpty(price)) {
-    if (typeof price !== 'number') {
+  if (!isEmpty(newPrice)) {
+    if (typeof newPrice !== 'number') {
       messages.push({
         field: 'price',
         message: 'Price is required and must be an integer',
@@ -52,8 +57,8 @@ async function validateProduct(
     }
   }
 
-  if (!isEmpty(categoryid)) {
-    if (typeof categoryid !== 'number' || categoryid > 12 || categoryid < 1) {
+  if (!isEmpty(newCat)) {
+    if (typeof newCat !== 'number' || newCat > 12 || newCat < 1) {
       messages.push({
         field: 'categoryid',
         message: 'Category must be a number between 0 and 11',

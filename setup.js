@@ -78,21 +78,21 @@ async function main() {
   }
 
   // skilar fylki af öllum myndunum í myndmöppunni
-  async function getAllImages() {
+  async function getImages() {
     const dirPath = getImageFolder();
     const filesToReturn = await readdirAsync(dirPath);
     return filesToReturn;
   }
 
-  const imgImages = await getAllImages();
+  const images = await getImages();
 
   let upload = null;
   const urls = [];
 
+
   for (let i = 0; i < 20; i += 1) {
     // eslint-disable-next-line no-await-in-loop
-    upload = await cloudinary.v2.uploader.upload('./public/img/' + imgImages[i],
-      function (error, result) { console.log(result, error); });
+    upload = await cloudinary.v2.uploader.upload('./public/img/' + images[i]); /* eslint-disable-line */
     urls.push(upload.secure_url);
   }
 
