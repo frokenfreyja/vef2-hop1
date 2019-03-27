@@ -2,6 +2,14 @@ const xss = require('xss');
 const { query, paged, updateCartLine } = require('../src/db');
 const { findUserById } = require('./users');
 
+
+/**
+ * Staðfestir að cart sé gilt.
+ * 
+ * @param {Number} productid auðkenni á vöru
+ * @param {Number} amount heildarverð körfu
+ * @returns {array} Fylki af villum sem komu upp, tómt ef engin villa
+ */
 async function validateCart({ productid, amount }) {
   const messages = [];
 
@@ -24,6 +32,14 @@ async function validateCart({ productid, amount }) {
   return messages;
 }
 
+/**
+ * Skilar vöru fyrir notanda með öllum línum og reiknuðu heildarverði körfu
+ * aðeins ef notandi er innskráður
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
+ * @returns {Object} Cart fyrir innskráðan notanda
+ */
 async function cartRoute(req, res) {
   const { route = 'cart', offset = 0, limit = 10 } = req.query;
 
@@ -62,6 +78,13 @@ async function cartRoute(req, res) {
   return res.json({ cart, totalPrice: price.rows[0] });
 }
 
+/**
+ * Bætir við vöru í körfu eftir id ef notandi er innskráður
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
+ * @return {Object} uppfærðri körfu notanda
+ */
 async function cartPostRoute(req, res) {
   const { userid } = req.user;
 
@@ -126,6 +149,14 @@ async function cartPostRoute(req, res) {
   return res.status(201).json(result.rows[0]);
 }
 
+/**
+ * Skilar línu í körfu eftir id með fjölda og upplýsingum um vöru
+ * Aðeins ef notandi er innskráður
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
+ * @returns {Object} línu í körfu notanda
+ */
 async function cartLineRoute(req, res) {
   const { id } = req.params;
 
@@ -147,6 +178,13 @@ async function cartLineRoute(req, res) {
   return res.json(cartLine.rows[0]);
 }
 
+/**
+ * Uppfærir línu eftir id í körfu notanda ef notandi er innskráður
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
+ * @returns {Object} uppfærðri línu í körfu notanda
+ */
 async function cartLinePatchRoute(req, res) {
   const { id } = req.params;
   const { amount } = req.body;
@@ -164,6 +202,12 @@ async function cartLinePatchRoute(req, res) {
   return res.status(201).json(result.item);
 }
 
+/**
+ * Eyðir línu úr körfu notanda eftir id ef hann er innskráður
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
+ */
 async function cartLineDeleteRoute(req, res) {
   const { id } = req.params;
 
@@ -180,6 +224,14 @@ async function cartLineDeleteRoute(req, res) {
   return res.status(404).json({ error: 'Cart product not found' });
 }
 
+/**
+ * Skilar öllum Orders þar sem nýjustu birtast fyrst
+ * Ef notandi er ekki admin birtast aðeins pantanir notanda
+ * 
+ * @param {Object} req 
+ * @param {Object} res
+ * @returns {array} fylki af pöntunum 
+ */
 async function ordersRoute(req, res) {
   const { route = 'orders', offset = 0, limit = 10 } = req.query;
 
@@ -216,6 +268,12 @@ async function ordersRoute(req, res) {
   return res.json(orders);
 }
 
+/**
+ * Býr til pöntun úr körfu ef notandi á pöntun eða er admin
+ * @param {Object} req 
+ * @param {Object} res
+ * @returns
+ */
 /*
 async function ordersToCartRoute(req, res) {
   const { userid } = req.user;
