@@ -36,7 +36,12 @@ async function query(sqlQuery, values = []) {
   return result;
 }
 
-async function paged(sqlQuery, { offset = 0, limit = 10, values = [] }) {
+async function paged(sqlQuery, {
+  route = '',
+  offset = 0,
+  limit = 10,
+  values = [],
+}) {
   const sqlLimit = values.length + 1;
   const sqlOffset = values.length + 2;
   const pagedQuery = `${sqlQuery} LIMIT $${sqlLimit} OFFSET $${sqlOffset}`;
@@ -54,19 +59,19 @@ async function paged(sqlQuery, { offset = 0, limit = 10, values = [] }) {
   const pages = {
     _links: {
       self: {
-        href: `http://localhost:3000/products?offset=${offsetAsNumber}&limit=${limitAsNumber}`,
+        href: `http://localhost:3000/${route}?offset=${offsetAsNumber}&limit=${limitAsNumber}`,
       },
     },
   };
   if (offsetAsNumber > 0) {
     pages._links.prev = {     /* eslint-disable-line */
-      href: `http://localhost:3000/products?offset=${offsetAsNumber - limitAsNumber}&limit=${limitAsNumber}`,
+      href: `http://localhost:3000/${route}?offset=${offsetAsNumber - limitAsNumber}&limit=${limitAsNumber}`,
     };
   }
 
   if (result.rows.length <= limitAsNumber) {
     pages._links.next = {     /* eslint-disable-line */
-      href: `http://localhost:3000/products?offset=${Number(offsetAsNumber) + limitAsNumber}&limit=${limitAsNumber}`,
+      href: `http://localhost:3000/${route}?offset=${Number(offsetAsNumber) + limitAsNumber}&limit=${limitAsNumber}`,
     };
   }
   return {
@@ -77,12 +82,12 @@ async function paged(sqlQuery, { offset = 0, limit = 10, values = [] }) {
   };
 }
 
-/* ------- VANTAR IMAGE+CATEGORYID ----------- */
 async function updateProduct(id, {
   title,
   price,
   description,
   categoryid,
+  image,
 }) {
   const result = await query('SELECT * FROM products where productid = $1', [id]);
 
@@ -114,6 +119,7 @@ async function updateProduct(id, {
     !isEmpty(price) ? 'price' : null,
     !isEmpty(description) ? 'description' : null,
     !isEmpty(categoryid) ? 'categoryid' : null,
+    !isEmpty(image) ? 'image' : null,
   ].filter(Boolean);
 
   const changedValues = [
@@ -121,6 +127,7 @@ async function updateProduct(id, {
     !isEmpty(price) ? xss(price) : null,
     !isEmpty(description) ? xss(description) : null,
     !isEmpty(categoryid) ? xss(categoryid) : null,
+    !isEmpty(image) ? xss(image) : null,
   ].filter(Boolean);
 
   const updates = [id, ...changedValues];

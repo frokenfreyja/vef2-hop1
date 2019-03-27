@@ -16,10 +16,12 @@ const {
   categoriesPatchRoute,
   categoriesDeleteRoute,
   productsRoute,
-  productsPostRoute,
+  // productsPostRoute,
   productRoute,
-  productPatchRoute,
+  // productPatchRoute,
   productDeleteRoute,
+  productsImageRouteWithMulter,
+  productsImagePatchRouteWithMulter,
 } = require('./products');
 
 const {
@@ -28,6 +30,8 @@ const {
   cartLineRoute,
   cartLinePatchRoute,
   cartLineDeleteRoute,
+  ordersRoute,
+  ordersToCartRoute,
 } = require('./cart');
 
 const router = express.Router();
@@ -57,6 +61,7 @@ function listOfUrls(req, res) {
     order: '/orders/:id',
   });
 }
+
 
 /**
  * Skilar lista af notendum
@@ -205,10 +210,10 @@ router.patch('/categories/:id', requireAuthenticationAsAdmin, catchErrors(catego
 router.delete('/categories/:id', requireAuthenticationAsAdmin, catchErrors(categoriesDeleteRoute));
 
 router.get('/products', catchErrors(productsRoute));
-router.post('/products', requireAuthenticationAsAdmin, catchErrors(productsPostRoute));
+router.post('/products', requireAuthenticationAsAdmin, catchErrors(productsImageRouteWithMulter));
 
 router.get('/products/:id', catchErrors(productRoute));
-router.patch('/products/:id', requireAuthenticationAsAdmin, catchErrors(productPatchRoute));
+router.patch('/products/:id', requireAuthenticationAsAdmin, catchErrors(productsImagePatchRouteWithMulter));
 router.delete('/products/:id', requireAuthenticationAsAdmin, catchErrors(productDeleteRoute));
 
 router.get('/cart', requireAuthentication, catchErrors(cartRoute));
@@ -217,5 +222,8 @@ router.post('/cart', requireAuthentication, catchErrors(cartPostRoute));
 router.get('/cart/line/:id', requireAuthentication, catchErrors(cartLineRoute));
 router.patch('/cart/line/:id', requireAuthentication, catchErrors(cartLinePatchRoute));
 router.delete('/cart/line/:id', requireAuthentication, catchErrors(cartLineDeleteRoute));
+
+router.get('/orders', requireAuthentication, catchErrors(ordersRoute));
+router.post('/orders', requireAuthentication, catchErrors(ordersToCartRoute));
 
 module.exports = router;
