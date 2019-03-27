@@ -29,7 +29,7 @@ Stjórnandi: Admin er með netfangið 'admin@admin.is' og lykilorðið 'password
 
 Notandi: User er með netfangið 'user@user.is' og lykilorðið 'password'
 
-Til að innskrá sig þarf að kalla á http://127.0.0.1:3000/users/login með POST
+Til að innskrá sig þarf að kalla á /users/login með POST
 í body þarf að vera
 
 {
