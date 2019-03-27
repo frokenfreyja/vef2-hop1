@@ -25,7 +25,7 @@ CREATE TABLE users (
 CREATE TABLE cart (
   cartid serial primary key,
   userid int not null,
-  ordered bit,
+  ordered bit default '0',
   name varchar(128),
   address varchar(128), 
   created timestamp with time zone,
