@@ -47,18 +47,18 @@ function listOfUrls(req, res) {
     login: '/users/login',
     register: '/users/register',
     users: '/users/',
-    user: '/users/:id',
+    user: '/users/{id}',
     me: '/users/me',
     products: '/products',
     productcategory: '/products?category={category}',
     searchproduct: '/products?search={query}',
-    product: '/products/:id',
+    product: '/products/{id}',
     categories: '/categories',
-    category: '/categories/:id',
+    category: '/categories/{id}',
     cart: '/cart',
-    cartline: '/cart/line/:id',
+    cartline: '/cart/line/{id}',
     orders: '/orders',
-    order: '/orders/:id',
+    order: '/orders/{id}',
   });
 }
 
@@ -213,7 +213,7 @@ router.get('/products', catchErrors(productsRoute));
 router.post('/products', requireAuthenticationAsAdmin, catchErrors(productsImageRouteWithMulter));
 
 router.get('/products/:id', catchErrors(productRoute));
-router.patch('/products/:id',requireAuthenticationAsAdmin, catchErrors(productsImagePatchRouteWithMulter));
+router.patch('/products/:id', requireAuthenticationAsAdmin, catchErrors(productsImagePatchRouteWithMulter));
 router.delete('/products/:id', requireAuthenticationAsAdmin, catchErrors(productDeleteRoute));
 
 router.get('/cart', requireAuthentication, catchErrors(cartRoute));
