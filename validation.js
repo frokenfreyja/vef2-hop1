@@ -1,3 +1,4 @@
+const { query } = require('./src/db');
 
 const invalidField = (s, maxlen) => {
   if (s !== undefined && typeof s !== 'string') {
@@ -10,7 +11,10 @@ const invalidField = (s, maxlen) => {
 
   return false;
 };
-const isEmpty = s => s != null && !s;
+
+function isEmpty(s) {
+  return s == null && !s;
+}
 
 async function validateProduct({
   title,
@@ -20,7 +24,8 @@ async function validateProduct({
 } = {}) {
   const messages = [];
 
-  if (title || isEmpty(title)) {
+
+  if (!isEmpty(title)) {
     if ((typeof title !== 'string' || title.length === 0 || title.length > 255)) {
       messages.push({
         field: 'title',
@@ -29,20 +34,34 @@ async function validateProduct({
     }
   }
 
-  if (!price || !Number.isInteger(Number(price))) {
-    messages.push({ field: 'price', message: 'Price is required and must be an integer' });
+  if (!isEmpty(price)) {
+    if (typeof price !== 'number') {
+      messages.push({
+        field: 'price',
+        message: 'Price is required and must be an integer',
+      });
+    }
+  }
+ 
+  if (!isEmpty(description)) {
+    if (typeof description !== 'string') {
+      messages.push({
+        field: 'description',
+        message: 'Description is required and must be a string',
+      });
+    }
+  }
+ 
+  if (!isEmpty(categoryid)) {
+    if (typeof categoryid !== 'number' || categoryid > 12 || categoryid < 1) {
+      messages.push({
+        field: 'categoryid',
+        message: 'Category must be a number between 0 and 11',
+      });
+    }
   }
 
-  if (!description || invalidField(description)) {
-    messages.push({ field: 'description', message: 'Description is required and must be a string' });
-  }
-
-  if (!categoryid || !Number.isInteger(Number(price))) {
-    messages.push({ field: 'category', message: 'Category is required and must be an integer' });
-  }
-
-  /* ----------------- VANTAR IMAGE+CATEGORIES ----------------- */
-
+  
   return messages;
 }
 
