@@ -82,8 +82,8 @@ async function paged(sqlQuery, {
   };
 }
 
-async function updateProduct(id, item) {
-  const result = await query('SELECT * FROM products where productid = $1', [id]);
+async function updateProduct(id, image, item) {
+  const result = await query('SELECT * FROM products WHERE productid = $1', [id]);
 
   if (result.rows.length === 0) {
     return {
@@ -113,7 +113,7 @@ async function updateProduct(id, item) {
     !isEmpty(item.price) ? 'price' : null,
     !isEmpty(item.description) ? 'description' : null,
     !isEmpty(item.categoryid) ? 'categoryid' : null,
-    !isEmpty(item.image) ? 'image' : null,
+    !isEmpty(image) ? 'image' : null,
   ].filter(Boolean);
 
   const changedValues = [
@@ -121,7 +121,7 @@ async function updateProduct(id, item) {
     !isEmpty(item.price) ? xss(item.price) : null,
     !isEmpty(item.description) ? xss(item.description) : null,
     !isEmpty(item.categoryid) ? xss(item.categoryid) : null,
-    !isEmpty(item.image) ? xss(item.image) : null,
+    !isEmpty(image) ? xss(image) : null,
   ].filter(Boolean);
 
   const updates = [id, ...changedValues];

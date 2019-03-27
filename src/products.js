@@ -341,6 +341,7 @@ async function productPatchRoute(req, res, next) {
   const { file: { path, mimetype } = {} } = req;
   let url;
 
+   
   if (req.file) {
     const splitMimeArray = mimetype.split('/');
     const fileType = splitMimeArray.pop();
@@ -366,12 +367,11 @@ async function productPatchRoute(req, res, next) {
     url = upload.secure_url;
   }
 
-  const result = await updateProduct(id, {
+  const result = await updateProduct(id, url,{
     title,
     price,
     description,
     categoryid,
-    url,
   });
 
   if (!result.success && result.validation.length > 0) {
