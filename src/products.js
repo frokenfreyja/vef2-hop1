@@ -41,7 +41,7 @@ async function categoriesRoute(req, res) {
 
   const categories = await paged('SELECT * FROM categories', { route, offset, limit });
 
-  return res.json(categories);
+  return res.status(201).json(categories);
 }
 
 /**
@@ -180,7 +180,7 @@ async function productsRoute(req, res) {
     limit,
     values,
   });
-  return res.json(products);
+  return res.status(201).json(products);
 }
 
 
@@ -318,7 +318,7 @@ async function productRoute(req, res) {
     return res.status(404).json({ error: 'Product not found' });
   }
 
-  return res.json(product.rows[0]);
+  return res.status(201).json(product.rows[0]);
 }
 
 
