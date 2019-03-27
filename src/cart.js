@@ -5,7 +5,7 @@ const { findUserById } = require('./users');
 
 /**
  * Staðfestir að cart sé gilt.
- * 
+ *
  * @param {Number} productid auðkenni á vöru
  * @param {Number} amount heildarverð körfu
  * @returns {array} Fylki af villum sem komu upp, tómt ef engin villa
@@ -35,9 +35,9 @@ async function validateCart(productid, amount) {
 /**
  * Skilar vöru fyrir notanda með öllum línum og reiknuðu heildarverði körfu
  * aðeins ef notandi er innskráður
- * 
- * @param {Object} req 
- * @param {Object} res 
+ *
+ * @param {Object} req
+ * @param {Object} res
  * @returns {Object} Cart fyrir innskráðan notanda
  */
 async function cartRoute(req, res) {
@@ -80,9 +80,9 @@ async function cartRoute(req, res) {
 
 /**
  * Bætir við vöru í körfu eftir id ef notandi er innskráður
- * 
- * @param {Object} req 
- * @param {Object} res 
+ *
+ * @param {Object} req
+ * @param {Object} res
  * @return {Object} uppfærðri körfu notanda
  */
 async function cartPostRoute(req, res) {
@@ -111,11 +111,12 @@ async function cartPostRoute(req, res) {
       RETURNING *
       `, [userid]);
   } else {
-    // Annars bæta vöru við körfu og skila
+    // Annars bæta vöru/vörum við körfu og skila
+    // TODO bæta við að athuga hvort varan sé í körfunni - þá yfirskrifa
+    // Ef varan er ekki í körfunni - þá bæta henni við
     const q = `
     INSERT INTO
       cart_products(cartid, productid, amount)
-    WHERE productid = $1
     VALUES
       ($2, $3, $4)
     RETURNING *
@@ -155,9 +156,9 @@ async function cartPostRoute(req, res) {
 /**
  * Skilar línu í körfu eftir id með fjölda og upplýsingum um vöru
  * Aðeins ef notandi er innskráður
- * 
- * @param {Object} req 
- * @param {Object} res 
+ *
+ * @param {Object} req
+ * @param {Object} res
  * @returns {Object} línu í körfu notanda
  */
 async function cartLineRoute(req, res) {
@@ -183,9 +184,9 @@ async function cartLineRoute(req, res) {
 
 /**
  * Uppfærir línu eftir id í körfu notanda ef notandi er innskráður
- * 
- * @param {Object} req 
- * @param {Object} res 
+ *
+ * @param {Object} req
+ * @param {Object} res
  * @returns {Object} uppfærðri línu í körfu notanda
  */
 async function cartLinePatchRoute(req, res) {
@@ -207,9 +208,9 @@ async function cartLinePatchRoute(req, res) {
 
 /**
  * Eyðir línu úr körfu notanda eftir id ef hann er innskráður
- * 
- * @param {Object} req 
- * @param {Object} res 
+ *
+ * @param {Object} req
+ * @param {Object} res
  */
 async function cartLineDeleteRoute(req, res) {
   const { id } = req.params;
@@ -230,10 +231,10 @@ async function cartLineDeleteRoute(req, res) {
 /**
  * Skilar öllum Orders þar sem nýjustu birtast fyrst
  * Ef notandi er ekki admin birtast aðeins pantanir notanda
- * 
- * @param {Object} req 
+ *
+ * @param {Object} req
  * @param {Object} res
- * @returns {array} fylki af pöntunum 
+ * @returns {array} fylki af pöntunum
  */
 async function ordersRoute(req, res) {
   const { route = 'orders', offset = 0, limit = 10 } = req.query;
@@ -272,14 +273,48 @@ async function ordersRoute(req, res) {
 }
 
 /**
- * Býr til pöntun úr körfu ef notandi á pöntun eða er admin
- * @param {Object} req 
- * @param {Object} res
- * @returns
+ * Athugar hvort að númer, nafn og heimilisfang séu til staðar og á réttu formi,
+ * ef ekki skilar það fylki með villum
+ * @param {Number} cartid Númer körfu
+ * @param {String} name Nafn á notanda
+ * @param {String} address Heimilisfang notanda
  */
-/*
+async function validateOrder(cartid, name, address) {
+  const errors = [];
+
+  if (!cartid || typeof cartid !== 'number') {
+    errors.push({
+      field: 'cartid',
+      message: 'Cartid is required and must be a number',
+    });
+  }
+
+  if (!name || typeof name !== 'string' || name.length > 128) {
+    errors.push({
+      field: 'name',
+      message: 'Name is required and must be a string no longer than 128 characters',
+    });
+  }
+
+  if (!address || typeof address !== 'string' || address.length > 128) {
+    errors.push({
+      field: 'address',
+      message: 'Address is required and must be a string no longer than 128 characters',
+    });
+  }
+
+  return errors;
+}
+
+
+/**
+ * Breytir körfu í pöntun ef að allar upplýsingar eru réttar
+ * @param {Object} req
+ * @param {Object} res
+ */
 async function ordersToCartRoute(req, res) {
   const { userid } = req.user;
+  const { cartid, name, address } = req.body;
 
   const user = await findUserById(userid);
 
@@ -291,20 +326,35 @@ async function ordersToCartRoute(req, res) {
   const orders = await query(`
     SELECT *
     FROM cart
-    WHERE userid = $1 AND ordered = '0'
+    WHERE userid = $1 AND cartid = $2 AND ordered IS NULL
     ORDER BY created DESC
-    `, [userid]);
+    `, [userid, cartid]);
 
-  console.log(orders);
-  console.log(orders.rows);
-  console.log(orders.rows.length);
-  // Ef hann á körfu þ.e. skilar > 0 þá athuga hvort að innihald sé > 0
-  if (orders.rows.length > 0) {
-    return true;
+  // Ef hann á ekki körfu skila að karfa sé ekki fundin
+  if (orders.rows.length === 0) {
+    return res.status(404).json({ error: 'Order not found' });
   }
-  return false;
-  // Ef svo er búa til körfu úr pöntun
-} */
+  // Ef hann á körfu - gera validate á body og búa til pöntun
+  const validation = await validateOrder(cartid, name, address);
+
+  // Ef ekki á réttu formi - skila error fylki
+  if (validation.length > 0) {
+    return res.status(400).json(validation);
+  }
+
+  const updates = [xss(name), xss(address), userid, cartid];
+  // Ef validation skilar engu þá setjum við ordered = '1', name = name,
+  // address = address og created = current_timestamp
+  const p = `
+    UPDATE cart
+    SET ordered = '1', name = $1, address = $2, created = current_timestamp
+    WHERE userid = $3 AND cartid = $4
+    RETURNING *`;
+
+  const updateResult = await query(p, updates);
+
+  return res.status(201).json({ order: updateResult.rows });
+}
 
 module.exports = {
   cartRoute,
@@ -313,5 +363,5 @@ module.exports = {
   cartLinePatchRoute,
   cartLineDeleteRoute,
   ordersRoute,
-  // ordersToCartRoute,
+  ordersToCartRoute,
 };

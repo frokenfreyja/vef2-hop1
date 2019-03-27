@@ -28,7 +28,7 @@ CREATE TABLE cart (
   ordered bit,
   name varchar(128),
   address varchar(128), 
-  created timestamp with time zone default current_timestamp,
+  created timestamp with time zone,
   foreign key(userid) references users(userid)
 );
 

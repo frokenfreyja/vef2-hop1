@@ -30,10 +30,10 @@ cloudinary.config({
 
 
 /**
- * Skilar lista af Categories 
- * 
- * @param {Object} req 
- * @param {Object} res 
+ * Skilar lista af Categories
+ *
+ * @param {Object} req
+ * @param {Object} res
  * @returns {array} Fylki af Categories
  */
 async function categoriesRoute(req, res) {
@@ -46,9 +46,9 @@ async function categoriesRoute(req, res) {
 
 /**
  * Býr til nýjan flokk og vistar í gagnagrunni ef að upplýsingar um hann eru gildar
- * 
- * @param {Object} req 
- * @param {Object} res 
+ *
+ * @param {Object} req
+ * @param {Object} res
  * @returns {Result} Niðurstaða þess að búa til Category
  */
 async function categoriesPostRoute(req, res) {
@@ -77,9 +77,9 @@ async function categoriesPostRoute(req, res) {
 /**
  * Uppfærir stakan flokk eftir id ef upplýsingarnar eru á réttu formi og vistar
  * í gagnagrunni
- * 
- * @param {Object} req 
- * @param {Object} res 
+ *
+ * @param {Object} req
+ * @param {Object} res
  * @returns {object} Category uppfærðum flokki
  */
 async function categoriesPatchRoute(req, res) {
@@ -101,9 +101,9 @@ async function categoriesPatchRoute(req, res) {
 
 /**
  * Eyðir flokki úr gagnagrunni eftir id ef flokkurinn er til
- * 
- * @param {Object} req 
- * @param {Object} res 
+ *
+ * @param {Object} req
+ * @param {Object} res
  */
 async function categoriesDeleteRoute(req, res) {
   const { id } = req.params;
@@ -122,10 +122,10 @@ async function categoriesDeleteRoute(req, res) {
 }
 
 /**
- * Skilar lista af Products 
- * 
- * @param {Object} req 
- * @param {Object} res 
+ * Skilar lista af Products
+ *
+ * @param {Object} req
+ * @param {Object} res
  * @returns {array} Fylki af Products
  */
 async function productsRoute(req, res) {
@@ -186,9 +186,9 @@ async function productsRoute(req, res) {
 
 /**
  * Býr til nýja vöru og vistar í gagnagrunni ef að upplýsingar um hana eru gildar
- * 
- * @param {Object} req 
- * @param {Object} res 
+ *
+ * @param {Object} req
+ * @param {Object} res
  * @returns {Result} Niðurstaða þess að búa til Product
  */
 async function productsPostRoute(req, res, next) {
@@ -292,10 +292,10 @@ async function productsPostRoute(req, res, next) {
 }
 
 /**
- * Sækir staka vöru úr gagnagrunni eftir id ef varan er til 
- * 
- * @param {Object} req 
- * @param {Object} res 
+ * Sækir staka vöru úr gagnagrunni eftir id ef varan er til
+ *
+ * @param {Object} req
+ * @param {Object} res
  * @returns {Object} Product eða null ef ekkert fannst
  */
 async function productRoute(req, res) {
@@ -324,9 +324,9 @@ async function productRoute(req, res) {
 /**
  * Uppfærir staka vöru eftir id ef upplýsingarnar eru á réttu formi og vistar
  * í gagnagrunni
- * 
- * @param {Object} req 
- * @param {Object} res 
+ *
+ * @param {Object} req
+ * @param {Object} res
  * @returns {object} Product uppfærðri vöru
  */
 async function productPatchRoute(req, res, next) {
@@ -440,9 +440,9 @@ async function productPatchRoute(req, res, next) {
 
 /**
  * Eyðir vöru úr gagnagrunni eftir id ef varan er til
- * 
- * @param {Object} req 
- * @param {Object} res 
+ *
+ * @param {Object} req
+ * @param {Object} res
  */
 async function productDeleteRoute(req, res) {
   const { productid } = req.params;
@@ -463,11 +463,11 @@ async function productDeleteRoute(req, res) {
 
 /**
  * Middleware sem tekur við form-data og upload-ar mynd ef hún fylgir nýrri vöru
- * 
+ *
  * @module Multer
  * @function
- * @param {Object} req 
- * @param {Object} res 
+ * @param {Object} req
+ * @param {Object} res
  */
 async function productsImageRouteWithMulter(req, res, next) {
   uploads.single('image')(req, res, (err) => {
@@ -485,11 +485,11 @@ async function productsImageRouteWithMulter(req, res, next) {
 
 /**
  * Middleware sem tekur við form-data og upload-ar mynd ef verið er að uppfæra mynd vöru
- * 
+ *
  * @module Multer
  * @function
- * @param {Object} req 
- * @param {Object} res 
+ * @param {Object} req
+ * @param {Object} res
  */
 async function productsImagePatchRouteWithMulter(req, res, next) {
   uploads.single('image')(req, res, (err) => {
