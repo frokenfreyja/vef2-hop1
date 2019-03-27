@@ -25,14 +25,24 @@ Dæmi um köll
 
 ## Innskráning
 
-Admin er með netfangið 'admin@admin.is' og lykilorðið 'password'
+Stjórnandi: Admin er með netfangið 'admin@admin.is' og lykilorðið 'password'
+
+Notandi: User er með netfangið 'user@user.is' og lykilorðið 'password'
 
 Til að innskrá sig þarf að kalla á http://127.0.0.1:3000/users/login með POST
+í body þarf að vera
+
+{
+  "email": "userEmail",
+  "password": "userPassword"
+}
+
+þar sem userEmail er netfang notanda og userPassword er lykilorð notanda
 
 ## Nöfn og notendanöfn hópmeðlima
 
-Freyja Sigurgísladóttir - frs24@hi.is - frokenfreyja
+Freyja Sigurgísladóttir - frs24@hi.is - frokenfreyja á github
 
-Henrietta Þóra Magnúsdóttir - hthm6@hi.is - HennyM
+Henrietta Þóra Magnúsdóttir - hthm6@hi.is - HennyM á github
 
-Kristín María Tómasdóttir - kmt3@hi.is - krimtom
+Kristín María Tómasdóttir - kmt3@hi.is - krimtom á github
