@@ -47,4 +47,4 @@ VALUES
 INSERT INTO cart 
 (userid, ordered, name, address)
 VALUES
-(2, true, 'Freyja Sigurgisladottir', 'Grettisgata 52');
+(2, '1', 'Freyja Sigurgisladottir', 'Grettisgata 52');

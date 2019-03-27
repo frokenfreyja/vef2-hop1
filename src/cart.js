@@ -48,12 +48,13 @@ async function cartRoute(req, res) {
   if (cart === 0) {
     return res.status(404).json({ error: 'Cart not found' });
   }
+
   const price = await query(`
     SELECT SUM(price)
     FROM products
     INNER JOIN cart_products 
         ON products.productid = cart_products.productid
-    INNER JOIN cart 
+    INNER JOIN cart
         ON cart_products.cartid = cart.cartid
     WHERE userid = $1
     `, [userid]);
@@ -70,17 +71,17 @@ async function cartPostRoute(req, res) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  // Sækjum körfu
+  // Sækjum körfu sem er ekki pöntuð
   let cart = await query(`
   SELECT cart.*
   FROM cart
-  WHERE userid = $1 AND ordered = false
+  WHERE userid = $1 AND ordered = '0'
   `, [userid]);
 
-  // Buum til körfu fyrir user ef hun er ekki til
+  // Búum til körfu fyrir user ef hún er ekki til
   if (cart.rows.length === 0) {
     cart = await query(`
-      INSERT INTO 
+      INSERT INTO
         cart(userid)
       VALUES
         ($1)
@@ -195,7 +196,7 @@ async function ordersRoute(req, res) {
     const orders = await query(`
     SELECT *
     FROM cart
-    WHERE userid = $1
+    WHERE userid = $1 AND ordered = '0'
     ORDER BY created DESC
     `, [userid]);
 
@@ -225,10 +226,23 @@ async function ordersToCartRoute(req, res) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  // Finna körfu þar sem að userid = userid
-  // Ef hann á körfu þ.e. skilar > 0 þá athuga hvort að innihald sé > 0
-  // Ef svo er búa til körfu úr pöntun
+  // Finna körfu(ordered=0) þar sem að userid = userid
+  const orders = await query(`
+    SELECT *
+    FROM cart
+    WHERE userid = $1 AND ordered = '0'
+    ORDER BY created DESC
+    `, [userid]);
 
+  console.log(orders);
+  console.log(orders.rows);
+  console.log(orders.rows.length);
+  // Ef hann á körfu þ.e. skilar > 0 þá athuga hvort að innihald sé > 0
+  if (orders.rows.length > 0) {
+    return true;
+  }
+  return false;
+  // Ef svo er búa til körfu úr pöntun
 } */
 
 module.exports = {
