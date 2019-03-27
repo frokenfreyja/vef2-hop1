@@ -130,6 +130,10 @@ async function productsPostRoute(req, res) {
 
   const errors = [];
 
+  // Athugum hvort categoryid er til - ef ekki er result falsy
+  const p = 'SELECT * FROM categories WHERE categoryid = $1';
+  const found = await query(p, [categoryid]);
+
   if (typeof title !== 'string' || title.length === 0 || title.length > 255) {
     const message = 'Title is required, must not be empty or longar than 255 characters';
     errors.push({
@@ -154,6 +158,14 @@ async function productsPostRoute(req, res) {
     });
   }
 
+  if (found.rows.length === 0) {
+    const message = 'CategoryId does not exist';
+    errors.push({
+      field: 'categoryid',
+      message,
+    });
+  }
+
   if (typeof categoryid !== 'number') {
     const message = 'CategoryId is required and must be a number';
     errors.push({
@@ -169,7 +181,7 @@ async function productsPostRoute(req, res) {
   const q = 'INSERT INTO products (title, price, description, categoryid) VALUES ($1, $2, $3, $4) RETURNING *';
   const result = await query(q, [xss(title), xss(price), xss(description), xss(categoryid)]);
 
-  return res.status(201).json(result.rows[0]);
+  return res.status(201).json(result.rows);
 }
 
 async function productRoute(req, res) {
