@@ -156,7 +156,6 @@ async function productsPostRoute(req, res, next) {
     price,
     description,
     categoryid,
-    // image,
   } = req.body;
   const { file: { path, mimetype } = {} } = req;
 
@@ -164,8 +163,6 @@ async function productsPostRoute(req, res, next) {
   const newPrice = parseInt(price);
   // eslint-disable-next-line radix
   const newCat = parseInt(categoryid);
-  console.log('path', path);
-  console.log('mimitype', mimetype);
 
   const splitMimeArray = mimetype.split('/');
   const fileType = splitMimeArray.pop();
@@ -204,7 +201,6 @@ async function productsPostRoute(req, res, next) {
       message,
     });
   }
-  console.log(description);
 
   if (found.rows.length === 0) {
     const message = 'CategoryId does not exist';
@@ -221,7 +217,6 @@ async function productsPostRoute(req, res, next) {
       message,
     });
   }
-  console.log(newCat);
 
   if (errors.length > 0) {
     return res.status(400).json(errors);
@@ -287,15 +282,68 @@ async function productPatchRoute(req, res, next) {
     categoryid,
   } = req.body;
   const { file: { path, mimetype } = {} } = req;
-  console.log('path:', path);
+
+  // eslint-disable-next-line radix
+  const newPrice = parseInt(price);
+  // eslint-disable-next-line radix
+  const newCat = parseInt(categoryid);
 
   const splitMimeArray = mimetype.split('/');
   const fileType = splitMimeArray.pop();
-  console.log(fileType);
   const types = ['jpeg', 'png', 'gif'];
 
   if (types.indexOf(fileType) === -1) {
     return res.status(400).json({ error: 'The file is not in the right format' });
+  }
+
+  const errors = [];
+
+  // Athugum hvort categoryid er til - ef ekki er result falsy
+  const p = 'SELECT * FROM categories WHERE categoryid = $1';
+  const found = await query(p, [categoryid]);
+
+  if (typeof title !== 'string' || title.length === 0 || title.length > 255) {
+    const message = 'Title is required, must not be empty or longar than 255 characters';
+    errors.push({
+      field: 'title',
+      message,
+    });
+  }
+
+  if (typeof newPrice !== 'number') {
+    const message = 'Price is required and must be a number';
+    errors.push({
+      field: 'price',
+      message,
+    });
+  }
+
+  if (typeof description !== 'string') {
+    const message = 'Description is required and must be a text';
+    errors.push({
+      field: 'description',
+      message,
+    });
+  }
+
+  if (found.rows.length === 0) {
+    const message = 'CategoryId does not exist';
+    errors.push({
+      field: 'categoryid',
+      message,
+    });
+  }
+
+  if (typeof newCat !== 'number') {
+    const message = 'CategoryId is required and must be a number';
+    errors.push({
+      field: 'categoryid',
+      message,
+    });
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json(errors);
   }
 
   let upload = null;
