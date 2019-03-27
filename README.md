@@ -33,8 +33,11 @@ Til að innskrá sig þarf að kalla á /users/login með POST
 í body þarf að vera
 
 {
+
   "email": "userEmail",
+  
   "password": "userPassword"
+  
 }
 
 þar sem userEmail er netfang notanda og userPassword er lykilorð notanda
