@@ -101,16 +101,6 @@ async function cartPostRoute(req, res) {
   WHERE userid = $1 AND ordered = '0'
   `, [userid]);
 
-  const cartproduct = await query(`
-  SELECT *
-  FROM products
-  INNER JOIN cart_products 
-      ON products.productid = cart_products.productid
-  INNER JOIN cart 
-      ON cart_products.cartid = cart.cartid
-  WHERE userid = $1
-  `, [userid]);
-
   // Búum til körfu fyrir user ef hún er ekki til
   if (cart.rows.length === 0) {
     cart = await query(`
