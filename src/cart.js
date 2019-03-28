@@ -94,7 +94,7 @@ async function cartPostRoute(req, res) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  // Sækjum körfu sem er ekki pöntuð
+  // Sækjum körfu sem er ekki pöntuð (cart.ordered = '0')
   let cart = await query(`
   SELECT cart.*
   FROM cart
@@ -111,14 +111,12 @@ async function cartPostRoute(req, res) {
       RETURNING *
       `, [userid]);
   } else {
-    // Annars bæta vörum við körfu og skila
+    // Bætum við körfu ef karfa er til
     // TODO bæta við að athuga hvort varan sé í körfunni - þá yfirskrifa
     // Ef varan er ekki í körfunni - þá bæta henni við
     const q = `
-    INSERT INTO
-      cart_products(cartid, productid, amount)
-    VALUES
-      ($1, $2, $3)
+    INSERT INTO cart_products(cartid, productid, amount) 
+      VALUES ($1, $2, $3)
     RETURNING *
     `;
 

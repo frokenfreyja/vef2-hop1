@@ -107,7 +107,7 @@ async function main() {
     }
   }
 
-  while (products.length < 20) {
+  while (products.length < 1000) {
     const product = faker.commerce.productName();
     if (products.indexOf(product) === -1) {
       products.push(product);
