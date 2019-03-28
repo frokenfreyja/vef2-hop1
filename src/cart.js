@@ -106,6 +106,7 @@ async function cartPostRoute(req, res) {
   WHERE userid = $1 AND ordered = '0'
   `, [userid]);
 
+
   // Búum til körfu fyrir user ef hún er ekki til
   if (cart.rows.length === 0) {
     cart = await query(`
@@ -116,19 +117,41 @@ async function cartPostRoute(req, res) {
       RETURNING *
       `, [userid]);
   } else {
-    // Bætum við körfu ef karfa er til
-    // TODO bæta við að athuga hvort varan sé í körfunni - þá yfirskrifa
+    // Annars bæta vörum við körfu og skila
+    // Athuga hvort varan sé í körfunni - þá yfirskrifa
     // Ef varan er ekki í körfunni - þá bæta henni við
-    const q = `
-    INSERT INTO cart_products(cartid, productid, amount) 
-      VALUES ($1, $2, $3)
-    RETURNING *
-    `;
+    const { cartid } = cart.rows[0];
+
+    // Athuga hvort það er vara í cartproducts með þessu productid og cartid
+    const cartproducts = await query(`
+      SELECT *
+      FROM cart_products
+      WHERE productid = $1 AND cartid = $2
+      `, [req.body.productid, cartid]);
+
+    let q;
+    // Ef engin product er með þetta productid í þessari körfu þá
+    if (cartproducts.rows.length === 0) {
+      q = `
+      INSERT INTO
+        cart_products(cartid, productid, amount)
+      VALUES
+        ($1, $2, $3)
+      RETURNING *
+      `;
+    } else {
+      q = `
+      UPDATE cart_products
+      SET amount = $3
+      WHERE productid = $2 AND cartid = $1
+      RETURNING *
+      `;
+    }
 
     const validationMessage = await validateCart(req.body.productid, req.body.amount);
 
     if (validationMessage.length > 0) {
-      return res.status(400).json({ errors: validationMessage });
+      return res.status(400).json(validationMessage);
     }
 
     const values = [xss(cart.rows[0].cartid), xss(req.body.productid), xss(req.body.amount)];
@@ -146,7 +169,7 @@ async function cartPostRoute(req, res) {
   const validationMessage = await validateCart(req.body.productid, req.body.amount);
 
   if (validationMessage.length > 0) {
-    return res.status(400).json({ errors: validationMessage });
+    return res.status(400).json(validationMessage);
   }
 
   const values = [xss(cart.rows[0].cartid), xss(req.body.productid), xss(req.body.amount)];
