@@ -31,7 +31,7 @@ Skilar:
 {"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNTUzODEzMTc3LCJleHAiOjE1NTM4MTY3Nzd9.sTdHJE317Hh24iSnIIVrVlcfmsieQSIsN2P9H3QuS_4"}
 ```
 
-Eftir það er hægt að senda fyrirspurn GET á http://localhost:3000/users/ með token í Autherization Header sem Bearer token:
+Eftir það er hægt að senda fyrirspurn GET á http://localhost:3000/users/ með token í Autherization Header sem Bearer token til þess að fá lista af notendum(einungis hægt ef notandi er stjórnandi):
 
 ```bash
 postman Header: "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNTUzODEzMTc3LCJleHAiOjE1NTM4MTY3Nzd9.sTdHJE317Hh24iSnIIVrVlcfmsieQSIsN2P9H3QuS_4" http://localhost:3000/users/
@@ -50,6 +50,34 @@ Skilar:
         "admin": false
     }
 ]
+```
+
+Notandi getur uppfært netfang og/eða lykilorð með því að senda fyrirspurn PATCH á http://localhost:3000/users/me með token í Authorization sem Bearer token og uppfærðar upplýsingar í body:
+
+```bash
+postman Header: "Content-Type: application/json" og "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNTUzODEzMTc3LCJleHAiOjE1NTM4MTY3Nzd9.sTdHJE317Hh24iSnIIVrVlcfmsieQSIsN2P9H3QuS_4" Body: '{"email": "hallo"}' http://localhost:3000/users/me
+Skilar:
+[
+    {
+        "field": "email",
+        "message": "Email must be an email"
+    }
+]
+þar sem email er ekki á réttu formi
+```
+
+Notandi getur uppfært upplýsingar sínar með því að senda fyrirspurn PATCH á http://localhost:3000/users/me með token í Authorization sem Bearer token:
+
+```bash
+postman Header: "Content-Type: application/json" og "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNTUzODEzMTc3LCJleHAiOjE1NTM4MTY3Nzd9.sTdHJE317Hh24iSnIIVrVlcfmsieQSIsN2P9H3QuS_4" Body: '{"email": "hallo"}' http://localhost:3000/users/me
+Skilar:
+[
+    {
+        "field": "email",
+        "message": "Email must be an email"
+    }
+]
+þar sem email er ekki á réttu formi
 ```
 
 ## Innskráning
