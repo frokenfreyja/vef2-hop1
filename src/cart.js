@@ -51,7 +51,7 @@ async function cartRoute(req, res) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  const cart = await query(`
+  const cart = await paged(`
     SELECT products.*, cart_products.amount, cart_products.cartid
     FROM products
     INNER JOIN cart_products 
@@ -59,9 +59,14 @@ async function cartRoute(req, res) {
     INNER JOIN cart 
         ON cart_products.cartid = cart.cartid
     WHERE userid = $1 AND ordered = '0'
-    `, [userid], { route, offset, limit });
+    `, {
+    route,
+    offset,
+    limit,
+    values: [userid],
+  });
 
-  if (cart.rows.length === 0) {
+  if (cart.items.length === 0) {
     return res.status(404).json({ error: 'Cart not found' });
   }
 
@@ -75,7 +80,7 @@ async function cartRoute(req, res) {
     WHERE userid = $1 AND ordered = '0'
     `, [userid]);
 
-  return res.status(201).json({ cart: cart.rows, total: price.rows[0] });
+  return res.status(201).json({ cart, total: price.rows[0] });
 }
 
 /**
@@ -101,6 +106,7 @@ async function cartPostRoute(req, res) {
   WHERE userid = $1 AND ordered = '0'
   `, [userid]);
 
+
   // Búum til körfu fyrir user ef hún er ekki til
   if (cart.rows.length === 0) {
     cart = await query(`
@@ -112,20 +118,40 @@ async function cartPostRoute(req, res) {
       `, [userid]);
   } else {
     // Annars bæta vörum við körfu og skila
-    // TODO bæta við að athuga hvort varan sé í körfunni - þá yfirskrifa
+    // Athuga hvort varan sé í körfunni - þá yfirskrifa
     // Ef varan er ekki í körfunni - þá bæta henni við
-    const q = `
-    INSERT INTO
-      cart_products(cartid, productid, amount)
-    VALUES
-      ($1, $2, $3)
-    RETURNING *
-    `;
+    const { cartid } = cart.rows[0];
+
+    // Athuga hvort það er vara í cartproducts með þessu productid og cartid
+    const cartproducts = await query(`
+      SELECT *
+      FROM cart_products
+      WHERE productid = $1 AND cartid = $2
+      `, [req.body.productid, cartid]);
+
+    let q;
+    // Ef engin product er með þetta productid í þessari körfu þá
+    if (cartproducts.rows.length === 0) {
+      q = `
+      INSERT INTO
+        cart_products(cartid, productid, amount)
+      VALUES
+        ($1, $2, $3)
+      RETURNING *
+      `;
+    } else {
+      q = `
+      UPDATE cart_products
+      SET amount = $3
+      WHERE productid = $2 AND cartid = $1
+      RETURNING *
+      `;
+    }
 
     const validationMessage = await validateCart(req.body.productid, req.body.amount);
 
     if (validationMessage.length > 0) {
-      return res.status(400).json({ errors: validationMessage });
+      return res.status(400).json(validationMessage);
     }
 
     const values = [xss(cart.rows[0].cartid), xss(req.body.productid), xss(req.body.amount)];
@@ -143,7 +169,7 @@ async function cartPostRoute(req, res) {
   const validationMessage = await validateCart(req.body.productid, req.body.amount);
 
   if (validationMessage.length > 0) {
-    return res.status(400).json({ errors: validationMessage });
+    return res.status(400).json(validationMessage);
   }
 
   const values = [xss(cart.rows[0].cartid), xss(req.body.productid), xss(req.body.amount)];
@@ -248,12 +274,17 @@ async function ordersRoute(req, res) {
 
   // Ef notandi er ekki admin birta bara hans pantanir
   if (user.admin === false) {
-    const orders = await query(`
+    const orders = await paged(`
     SELECT *
     FROM cart
     WHERE userid = $1 AND ordered = '1'
     ORDER BY created DESC
-    `, [userid]);
+    `, {
+      route,
+      offset,
+      limit,
+      values: [userid],
+    });
 
     if (orders.rows.length === 0) {
       return res.status(404).json({ error: 'Order not found' });
