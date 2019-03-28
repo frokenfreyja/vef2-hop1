@@ -190,12 +190,12 @@ async function productsRoute(req, res) {
         (to_tsvector('english', categories.title) @@ plainto_tsquery('english', $1))
       ORDER BY created DESC
     `;
-   
+
     console.log(q);
     values = [category, search];
     console.log(values);
   }
-  
+
   const products = await paged(q, {
     route,
     offset,
@@ -204,8 +204,6 @@ async function productsRoute(req, res) {
   });
   return res.status(201).json(products);
 }
-
-
 
 /**
  * Býr til nýja vöru og vistar í gagnagrunni ef að upplýsingar um hana eru gildar

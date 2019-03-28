@@ -51,17 +51,22 @@ async function cartRoute(req, res) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  const cart = await query(`
+  const cart = await paged(`
     SELECT products.*, cart_products.amount, cart_products.cartid
     FROM products
     INNER JOIN cart_products 
         ON products.productid = cart_products.productid
     INNER JOIN cart 
         ON cart_products.cartid = cart.cartid
-    WHERE userid = $1
-    `, [userid], { route, offset, limit });
+    WHERE userid = $1 AND ordered = '0'
+    `, {
+    route,
+    offset,
+    limit,
+    values: [userid],
+  });
 
-  if (cart === 0) {
+  if (cart.items.length === 0) {
     return res.status(404).json({ error: 'Cart not found' });
   }
 
@@ -72,10 +77,10 @@ async function cartRoute(req, res) {
         ON products.productid = cart_products.productid
     INNER JOIN cart
         ON cart_products.cartid = cart.cartid
-    WHERE userid = $1
+    WHERE userid = $1 AND ordered = '0'
     `, [userid]);
 
-  return res.status(201).json({ cart: cart.rows, totalPrice: price.rows[0] });
+  return res.status(201).json({ cart, total: price.rows[0] });
 }
 
 /**
@@ -94,7 +99,7 @@ async function cartPostRoute(req, res) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  // Sækjum körfu sem er ekki pöntuð
+  // Sækjum körfu sem er ekki pöntuð (cart.ordered = '0')
   let cart = await query(`
   SELECT cart.*
   FROM cart
@@ -111,14 +116,12 @@ async function cartPostRoute(req, res) {
       RETURNING *
       `, [userid]);
   } else {
-    // Annars bæta vöru/vörum við körfu og skila
+    // Bætum við körfu ef karfa er til
     // TODO bæta við að athuga hvort varan sé í körfunni - þá yfirskrifa
     // Ef varan er ekki í körfunni - þá bæta henni við
     const q = `
-    INSERT INTO
-      cart_products(cartid, productid, amount)
-    VALUES
-      ($2, $3, $4)
+    INSERT INTO cart_products(cartid, productid, amount) 
+      VALUES ($1, $2, $3)
     RETURNING *
     `;
 
@@ -128,9 +131,7 @@ async function cartPostRoute(req, res) {
       return res.status(400).json({ errors: validationMessage });
     }
 
-
-    const values = [req.body.productid,
-      xss(cart.rows[0].cartid), xss(req.body.productid), xss(req.body.amount)];
+    const values = [xss(cart.rows[0].cartid), xss(req.body.productid), xss(req.body.amount)];
     const result = await query(q, values);
     return res.status(201).json(result.rows[0]);
   }
@@ -150,6 +151,7 @@ async function cartPostRoute(req, res) {
 
   const values = [xss(cart.rows[0].cartid), xss(req.body.productid), xss(req.body.amount)];
   const result = await query(q, values);
+
   return res.status(201).json(result.rows[0]);
 }
 
@@ -249,24 +251,35 @@ async function ordersRoute(req, res) {
 
   // Ef notandi er ekki admin birta bara hans pantanir
   if (user.admin === false) {
-    const orders = await query(`
+    const orders = await paged(`
     SELECT *
     FROM cart
-    WHERE userid = $1 AND ordered = '0'
+    WHERE userid = $1 AND ordered = '1'
     ORDER BY created DESC
-    `, [userid]);
+    `, {
+      route,
+      offset,
+      limit,
+      values: [userid],
+    });
 
-    if (orders.rows.length === 0) {
+    if (orders.items.length === 0) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    return res.status(201).json(orders.rows);
+    return res.status(201).json(orders);
   }
 
   // Ef notandi er admin þá birta allar pantanir
-  const orders = await paged('SELECT * FROM cart ORDER BY created DESC', { route, offset, limit });
+  const orders = await paged(`
+  SELECT * FROM cart ORDER BY created DESC
+  `, {
+    route,
+    offset,
+    limit,
+  });
 
-  if (orders === 0) {
+  if (orders.items.length === 0) {
     return res.status(404).json({ error: 'Order not found' });
   }
   return res.status(201).json(orders);
@@ -279,15 +292,8 @@ async function ordersRoute(req, res) {
  * @param {String} name Nafn á notanda
  * @param {String} address Heimilisfang notanda
  */
-async function validateOrder(cartid, name, address) {
+async function validateOrder(name, address) {
   const errors = [];
-
-  if (!cartid || typeof cartid !== 'number') {
-    errors.push({
-      field: 'cartid',
-      message: 'Cartid is required and must be a number',
-    });
-  }
 
   if (!name || typeof name !== 'string' || name.length > 128) {
     errors.push({
@@ -306,15 +312,14 @@ async function validateOrder(cartid, name, address) {
   return errors;
 }
 
-
 /**
  * Breytir körfu í pöntun ef að allar upplýsingar eru réttar
  * @param {Object} req
  * @param {Object} res
  */
-async function ordersToCartRoute(req, res) {
+async function ordersPostRoute(req, res) {
   const { userid } = req.user;
-  const { cartid, name, address } = req.body;
+  const { name, address } = req.body;
 
   const user = await findUserById(userid);
 
@@ -323,26 +328,24 @@ async function ordersToCartRoute(req, res) {
   }
 
   // Finna körfu(ordered=0) þar sem að userid = userid
-  const orders = await query(`
+  const cart = await query(`
     SELECT *
     FROM cart
-    WHERE userid = $1 AND cartid = $2 AND ordered IS NULL
+    WHERE userid = $1 AND ordered = '0'
     ORDER BY created DESC
-    `, [userid, cartid]);
+    `, [userid]);
 
   // Ef hann á ekki körfu skila að karfa sé ekki fundin
-  if (orders.rows.length === 0) {
-    return res.status(404).json({ error: 'Order not found' });
+  if (cart.rows.length === 0) {
+    return res.status(404).json({ error: 'Cart not found' });
   }
   // Ef hann á körfu - gera validate á body og búa til pöntun
-  const validation = await validateOrder(cartid, name, address);
+  const validation = await validateOrder(name, address);
 
   // Ef ekki á réttu formi - skila error fylki
   if (validation.length > 0) {
     return res.status(400).json(validation);
   }
-
-  const updates = [xss(name), xss(address), userid, cartid];
   // Ef validation skilar engu þá setjum við ordered = '1', name = name,
   // address = address og created = current_timestamp
   const p = `
@@ -351,9 +354,58 @@ async function ordersToCartRoute(req, res) {
     WHERE userid = $3 AND cartid = $4
     RETURNING *`;
 
+  const updates = [xss(name), xss(address), userid, cart.rows[0].cartid];
   const updateResult = await query(p, updates);
 
   return res.status(201).json({ order: updateResult.rows });
+}
+
+/**
+ * Skilar pöntun með öllum línum, gildum pöntunar og reiknuðu heildarverði körfu
+ * @param {Object} req
+ * @param {Object} res
+ */
+async function orderItemsRoute(req, res) {
+  const { userid } = req.user;
+
+  const user = await findUserById(userid);
+
+  if (user === null) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  const { id } = req.params;
+
+  if (!Number.isInteger(Number(id))) {
+    return res.status(404).json({ error: 'Order not found' });
+  }
+
+  const order = await query(`
+  SELECT products.*, cart_products.amount, categories.title AS categoryTitle
+  FROM products
+  LEFT JOIN categories on products.categoryid = categories.categoryid
+  INNER JOIN cart_products 
+    ON products.productid = cart_products.productid
+  INNER JOIN cart 
+    ON cart_products.cartid = cart.cartid
+  WHERE cart.cartid = $1 AND userid = $2 AND ordered = '1'
+`, [id, userid]);
+
+  if (order.rows.length === 0) {
+    return res.status(404).json({ error: 'Order not found' });
+  }
+
+  const price = await query(`
+    SELECT SUM(price * amount)
+    FROM products
+    INNER JOIN cart_products 
+      ON products.productid = cart_products.productid
+    INNER JOIN cart
+      ON cart_products.cartid = cart.cartid
+    WHERE cart.cartid = $1 AND userid = $2 AND ordered = '1'
+    `, [id, userid]);
+
+  return res.status(201).json({ order: order.rows, total: price.rows[0] });
 }
 
 module.exports = {
@@ -363,5 +415,6 @@ module.exports = {
   cartLinePatchRoute,
   cartLineDeleteRoute,
   ordersRoute,
-  ordersToCartRoute,
+  ordersPostRoute,
+  orderItemsRoute,
 };
