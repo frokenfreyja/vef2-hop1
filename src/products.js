@@ -30,11 +30,11 @@ cloudinary.config({
 
 
 /**
- * Skilar lista af Categories
+ * Skilar síðu af flokkum
  *
  * @param {Object} req
  * @param {Object} res
- * @returns {array} Fylki af Categories
+ * @returns {Result} Síður af flokkum
  */
 async function categoriesRoute(req, res) {
   const { route = 'categories', offset = 0, limit = 10 } = req.query;
@@ -122,11 +122,11 @@ async function categoriesDeleteRoute(req, res) {
 }
 
 /**
- * Skilar lista af Products
+ * Skilar síðu af vörum raðað i dagsetningar röð, nýjustu vörur fyrst
  *
  * @param {Object} req
  * @param {Object} res
- * @returns {array} Fylki af Products
+ * @returns {Result} Síðu af vörum
  */
 async function productsRoute(req, res) {
   const {
@@ -207,6 +207,7 @@ async function productsRoute(req, res) {
 
 /**
  * Býr til nýja vöru og vistar í gagnagrunni ef að upplýsingar um hana eru gildar
+ * Aðeins ef notandi er stjórnandi
  *
  * @param {Object} req
  * @param {Object} res
