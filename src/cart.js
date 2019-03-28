@@ -51,7 +51,7 @@ async function cartRoute(req, res) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  const cart = await paged(`
+  const cart = await query(`
     SELECT products.*, cart_products.amount, cart_products.cartid
     FROM products
     INNER JOIN cart_products 
