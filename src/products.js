@@ -137,6 +137,7 @@ async function productsRoute(req, res) {
     category = '',
   } = req.query;
 
+  
   let q = `
     SELECT 
       products.*, categories.title AS categoryTitle
@@ -144,8 +145,8 @@ async function productsRoute(req, res) {
     LEFT JOIN categories ON products.categoryid = categories.categoryid
     ORDER BY created DESC
   `;
-  const values = [];
-
+  
+  let values;
   if (typeof search === 'string' && search !== '') {
     q = `
     SELECT 
@@ -158,7 +159,7 @@ async function productsRoute(req, res) {
         to_tsvector('english', products.description) @@ plainto_tsquery('english', $1)
       ORDER BY created DESC
     `;
-    values.push(search);
+    values = [search];
   }
 
   if (typeof category === 'string' && category !== '') {
@@ -171,9 +172,30 @@ async function productsRoute(req, res) {
         to_tsvector('english', categories.title) @@ plainto_tsquery('english', $1)
       ORDER BY created DESC
     `;
-    values.push(category);
-  }
 
+    values = [category];
+    console.log(category);
+  }
+  if ((typeof category === 'string' && category !== '') && (typeof search === 'string' && search !== '')) {
+    q = `
+    SELECT 
+      products.*, categories.title AS categoryTitle
+      FROM products
+      LEFT JOIN categories ON products.categoryid = categories.categoryid
+      WHERE
+        (to_tsvector('english', products.title) @@ plainto_tsquery('english', $2)
+        OR
+        to_tsvector('english', products.description) @@ plainto_tsquery('english', $2))
+        AND
+        (to_tsvector('english', categories.title) @@ plainto_tsquery('english', $1))
+      ORDER BY created DESC
+    `;
+   
+    console.log(q);
+    values = [category, search];
+    console.log(values);
+  }
+  
   const products = await paged(q, {
     route,
     offset,
@@ -182,6 +204,7 @@ async function productsRoute(req, res) {
   });
   return res.status(201).json(products);
 }
+
 
 
 /**
@@ -367,6 +390,7 @@ async function productPatchRoute(req, res, next) {
     url = upload.secure_url;
   }
 
+  console.log(url);
   const result = await updateProduct(id, url,{
     title,
     price,
@@ -374,6 +398,7 @@ async function productPatchRoute(req, res, next) {
     categoryid,
   });
 
+  console.log(url);
   if (!result.success && result.validation.length > 0) {
     return res.status(400).json(result.validation);
   }
