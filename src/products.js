@@ -417,13 +417,13 @@ async function productPatchRoute(req, res, next) {
  * @param {Object} res
  */
 async function productDeleteRoute(req, res) {
-  const { productid } = req.params;
+  const { id } = req.params;
 
-  if (!Number.isInteger(Number(productid))) {
+  if (!Number.isInteger(Number(id))) {
     return res.status(404).json({ error: 'Product not found' });
   }
 
-  const del = await query('DELETE FROM products WHERE productid = $1', [productid]);
+  const del = await query('DELETE FROM products WHERE productid = $1', [id]);
 
   if (del.rowCount === 1) {
     return res.status(204).json({});
