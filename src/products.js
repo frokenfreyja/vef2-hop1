@@ -30,11 +30,11 @@ cloudinary.config({
 
 
 /**
- * Skilar lista af Categories
+ * Skilar síðu af flokkum
  *
  * @param {Object} req
  * @param {Object} res
- * @returns {array} Fylki af Categories
+ * @returns {Result} Síður af flokkum
  */
 async function categoriesRoute(req, res) {
   const { route = 'categories', offset = 0, limit = 10 } = req.query;
@@ -122,11 +122,11 @@ async function categoriesDeleteRoute(req, res) {
 }
 
 /**
- * Skilar lista af Products
+ * Skilar síðu af vörum raðað i dagsetningar röð, nýjustu vörur fyrst
  *
  * @param {Object} req
  * @param {Object} res
- * @returns {array} Fylki af Products
+ * @returns {Result} Síðu af vörum
  */
 async function productsRoute(req, res) {
   const {
@@ -188,6 +188,7 @@ async function productsRoute(req, res) {
         (to_tsvector('english', categories.title) @@ plainto_tsquery('english', $1))
       ORDER BY created DESC
     `;
+    
     values = [category, search];
   }
 
@@ -200,9 +201,9 @@ async function productsRoute(req, res) {
   return res.status(201).json(products);
 }
 
-
 /**
  * Býr til nýja vöru og vistar í gagnagrunni ef að upplýsingar um hana eru gildar
+ * Aðeins ef notandi er stjórnandi
  *
  * @param {Object} req
  * @param {Object} res
@@ -409,13 +410,13 @@ async function productPatchRoute(req, res, next) {
  * @param {Object} res
  */
 async function productDeleteRoute(req, res) {
-  const { productid } = req.params;
+  const { id } = req.params;
 
-  if (!Number.isInteger(Number(productid))) {
+  if (!Number.isInteger(Number(id))) {
     return res.status(404).json({ error: 'Product not found' });
   }
 
-  const del = await query('DELETE FROM products WHERE productid = $1', [productid]);
+  const del = await query('DELETE FROM products WHERE productid = $1', [id]);
 
   if (del.rowCount === 1) {
     return res.status(204).json({});

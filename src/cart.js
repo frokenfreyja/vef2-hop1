@@ -99,7 +99,7 @@ async function cartPostRoute(req, res) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  // Sækjum körfu sem er ekki pöntuð
+  // Sækjum körfu sem er ekki pöntuð (cart.ordered = '0')
   let cart = await query(`
   SELECT cart.*
   FROM cart
@@ -286,17 +286,23 @@ async function ordersRoute(req, res) {
       values: [userid],
     });
 
-    if (orders.rows.length === 0) {
+    if (orders.items.length === 0) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    return res.status(201).json(orders.rows);
+    return res.status(201).json(orders);
   }
 
   // Ef notandi er admin þá birta allar pantanir
-  const orders = await paged('SELECT * FROM cart ORDER BY created DESC', { route, offset, limit });
+  const orders = await paged(`
+  SELECT * FROM cart ORDER BY created DESC
+  `, {
+    route,
+    offset,
+    limit,
+  });
 
-  if (orders === 0) {
+  if (orders.items.length === 0) {
     return res.status(404).json({ error: 'Order not found' });
   }
   return res.status(201).json(orders);
@@ -312,14 +318,6 @@ async function ordersRoute(req, res) {
 async function validateOrder(name, address) {
   const errors = [];
 
-  /*
-  if (!cartid || typeof cartid !== 'number') {
-    errors.push({
-      field: 'cartid',
-      message: 'Cartid is required and must be a number',
-    });
-  }
-*/
   if (!name || typeof name !== 'string' || name.length > 128) {
     errors.push({
       field: 'name',

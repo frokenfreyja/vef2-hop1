@@ -21,7 +21,36 @@
 
 ## Dæmi um köll í vefþjónustu
 
-Dæmi um köll
+Til að auðkenna þarf að senda POST á http://localhost:3000/users/login með JSON sem inniheldur email og password fyrir notanda eins og sjá má að neðan. Ef netfang og lykilorð eru rétt er jwt token skilað.
+
+Dæmi um login kall:
+
+```bash
+postman Header: "Content-Type: application/json" Body: '{"email": "admin@admin.is", "password": "password"}' http://localhost:3000/users/login
+Skilar:
+{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNTUzODEzMTc3LCJleHAiOjE1NTM4MTY3Nzd9.sTdHJE317Hh24iSnIIVrVlcfmsieQSIsN2P9H3QuS_4"}
+```
+
+Eftir það er hægt að senda fyrirspurn GET á http://localhost:3000/users/ með token í Autherization Header sem Bearer token:
+
+```bash
+postman Header: "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNTUzODEzMTc3LCJleHAiOjE1NTM4MTY3Nzd9.sTdHJE317Hh24iSnIIVrVlcfmsieQSIsN2P9H3QuS_4" http://localhost:3000/users/
+Skilar:
+[
+    {
+        "userid": 1,
+        "username": "admin",
+        "email": "admin@admin.is",
+        "admin": true
+    },
+    {
+        "userid": 2,
+        "username": "user",
+        "email": "user@user.is",
+        "admin": false
+    }
+]
+```
 
 ## Innskráning
 
@@ -29,8 +58,7 @@ Stjórnandi: Admin er með netfangið 'admin@admin.is' og lykilorðið 'password
 
 Notandi: User er með netfangið 'user@user.is' og lykilorðið 'password'
 
-Til að innskrá sig þarf að kalla á /users/login með POST
-í body þarf að vera
+Til að innskrá sig þarf að senda POST á http://localhost:3000/users/login með JSON sem inniheldur netfang notanda og lykilorð notanda eins og sýnir að neðan:
 
 {
 
@@ -40,7 +68,7 @@ Til að innskrá sig þarf að kalla á /users/login með POST
   
 }
 
-þar sem userEmail er netfang notanda og userPassword er lykilorð notanda
+þar sem userEmail er netfang notanda og userPassword er lykilorð notanda.
 
 ## Nöfn og notendanöfn hópmeðlima
 

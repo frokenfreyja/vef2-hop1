@@ -67,36 +67,23 @@ async function main() {
     console.error('Villa við að bæta gögnum við:', e.message);
   }
 
-  /* Setur myndirnar úr public/img inn á cloudinary *//*
-  const images = fs.readdirSync('./public/img/').filter(function(file) {
-    if (file.indexOf('.jpg') > -1) return file;
-  });
 
-  */
-  function getImageFolder() {
-    return path.join(__dirname, './public/img/');
-  }
-
-  // skilar fylki af öllum myndunum í myndmöppunni
-  async function getImages() {
-    const dirPath = getImageFolder();
-    const filesToReturn = await readdirAsync(dirPath);
-    return filesToReturn;
-  }
-
-  const images = await getImages();
+  // skilar fylki af öllum myndunum í public/img
+  const dirPath = path.join(__dirname, './public/img/');
+  const images = await readdirAsync(dirPath);
 
   let upload = null;
   const urls = [];
 
 
+  // uploadar myndunum á cloudinary
   for (let i = 0; i < 20; i += 1) {
     // eslint-disable-next-line no-await-in-loop
     upload = await cloudinary.v2.uploader.upload('./public/img/' + images[i]); /* eslint-disable-line */
     urls.push(upload.secure_url);
   }
 
-  /* Setur inn í töflurnar categories og products */
+  // Setur inn í töfluna categories
   while (departmts.length < 12) {
     const departmt = faker.commerce.department();
     if (departmts.indexOf(departmt) === -1) {
@@ -107,7 +94,7 @@ async function main() {
     }
   }
 
-  while (products.length < 20) {
+  while (products.length < 1000) {
     const product = faker.commerce.productName();
     if (products.indexOf(product) === -1) {
       products.push(product);
