@@ -51,7 +51,7 @@ async function cartRoute(req, res) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  const cart = await query(`
+  const cart = await paged(`
     SELECT products.*, cart_products.amount, cart_products.cartid
     FROM products
     INNER JOIN cart_products 
@@ -61,7 +61,7 @@ async function cartRoute(req, res) {
     WHERE userid = $1 AND ordered = '0'
     `, [userid], { route, offset, limit });
 
-  if (cart === 0) {
+  if (cart.rows.length === 0) {
     return res.status(404).json({ error: 'Cart not found' });
   }
 
