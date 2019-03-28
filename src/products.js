@@ -205,8 +205,6 @@ async function productsRoute(req, res) {
   return res.status(201).json(products);
 }
 
-
-
 /**
  * Býr til nýja vöru og vistar í gagnagrunni ef að upplýsingar um hana eru gildar
  *

@@ -51,7 +51,7 @@ async function cartRoute(req, res) {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  const cart = await query(`
+  const cart = await paged(`
     SELECT products.*, cart_products.amount, cart_products.cartid
     FROM products
     INNER JOIN cart_products 
@@ -59,9 +59,14 @@ async function cartRoute(req, res) {
     INNER JOIN cart 
         ON cart_products.cartid = cart.cartid
     WHERE userid = $1 AND ordered = '0'
-    `, [userid], { route, offset, limit });
+    `, {
+    route,
+    offset,
+    limit,
+    values: [userid],
+  });
 
-  if (cart === 0) {
+  if (cart.items.length === 0) {
     return res.status(404).json({ error: 'Cart not found' });
   }
 
@@ -75,7 +80,7 @@ async function cartRoute(req, res) {
     WHERE userid = $1 AND ordered = '0'
     `, [userid]);
 
-  return res.status(201).json({ cart: cart.rows, total: price.rows[0] });
+  return res.status(201).json({ cart, total: price.rows[0] });
 }
 
 /**
@@ -246,24 +251,35 @@ async function ordersRoute(req, res) {
 
   // Ef notandi er ekki admin birta bara hans pantanir
   if (user.admin === false) {
-    const orders = await query(`
+    const orders = await paged(`
     SELECT *
     FROM cart
     WHERE userid = $1 AND ordered = '1'
     ORDER BY created DESC
-    `, [userid]);
+    `, {
+      route,
+      offset,
+      limit,
+      values: [userid],
+    });
 
-    if (orders.rows.length === 0) {
+    if (orders.items.length === 0) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    return res.status(201).json(orders.rows);
+    return res.status(201).json(orders);
   }
 
   // Ef notandi er admin þá birta allar pantanir
-  const orders = await paged('SELECT * FROM cart ORDER BY created DESC', { route, offset, limit });
+  const orders = await paged(`
+  SELECT * FROM cart ORDER BY created DESC
+  `, {
+    route,
+    offset,
+    limit,
+  });
 
-  if (orders === 0) {
+  if (orders.items.length === 0) {
     return res.status(404).json({ error: 'Order not found' });
   }
   return res.status(201).json(orders);
@@ -279,14 +295,6 @@ async function ordersRoute(req, res) {
 async function validateOrder(name, address) {
   const errors = [];
 
-  /*
-  if (!cartid || typeof cartid !== 'number') {
-    errors.push({
-      field: 'cartid',
-      message: 'Cartid is required and must be a number',
-    });
-  }
-*/
   if (!name || typeof name !== 'string' || name.length > 128) {
     errors.push({
       field: 'name',
