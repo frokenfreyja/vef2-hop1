@@ -11,6 +11,7 @@
   * PORT - sem vefurinn á að vera keyrður á
   * HOST - sem vefurinn á að vera keyrður á
   * JWT_SECRET sem er leyndarmál sem notað er í undirskrift á token
+  * HREF, slóð sem verkefni keyrir á
   * CLOUDINARY_URL, stilling fyrir cloudinary, fengin úr cloudinary console
   * CLOUDINARY_CLOUD, stilling fyrir cloudinary, fengin úr cloudinary console
   * CLOUDINARY_API_KEY, stilling fyrir cloudinary, fengin úr cloudinary console
