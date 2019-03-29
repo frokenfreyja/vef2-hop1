@@ -36,6 +36,7 @@ async function query(sqlQuery, values = []) {
   return result;
 }
 
+
 async function paged(sqlQuery, {
   route = '',
   offset = 0,
@@ -45,6 +46,7 @@ async function paged(sqlQuery, {
   const sqlLimit = values.length + 1;
   const sqlOffset = values.length + 2;
   const pagedQuery = `${sqlQuery} LIMIT $${sqlLimit} OFFSET $${sqlOffset}`;
+  const href = process.env.HREF;
 
   const limitAsNumber = Number(limit);
   const offsetAsNumber = Number(offset);
@@ -59,19 +61,19 @@ async function paged(sqlQuery, {
   const pages = {
     _links: {
       self: {
-        href: `http://localhost:3000/${route}?offset=${offsetAsNumber}&limit=${limitAsNumber}`,
+        href: `${href}/${route}?offset=${offsetAsNumber}&limit=${limitAsNumber}`,
       },
     },
   };
   if (offsetAsNumber > 0) {
     pages._links.prev = {     /* eslint-disable-line */
-      href: `http://localhost:3000/${route}?offset=${offsetAsNumber - limitAsNumber}&limit=${limitAsNumber}`,
+      href: `${href}/${route}?offset=${offsetAsNumber - limitAsNumber}&limit=${limitAsNumber}`,
     };
   }
 
   if (result.rows.length <= limitAsNumber) {
     pages._links.next = {     /* eslint-disable-line */
-      href: `http://localhost:3000/${route}?offset=${Number(offsetAsNumber) + limitAsNumber}&limit=${limitAsNumber}`,
+      href: `${href}/${route}?offset=${Number(offsetAsNumber) + limitAsNumber}&limit=${limitAsNumber}`,
     };
   }
   return {
