@@ -67,7 +67,7 @@ Skilar:
 þar sem email er ekki á réttu formi
 ```
 
-Stjórnandi getur búið til nýja vöru með því að senda fyrirspurn POST á http://localhost:3000/products með token í Authorization sem Bearer token og upplýsingar um vöru í body sem form-data:
+Stjórnandi getur búið til nýja vöru með því að senda fyrirspurn POST á http://localhost:3000/products með token í Authorization sem Bearer token og upplýsingar um vöru í body sem form-data(ef hann er með image, annars sem JSON gögn):
 
 ```bash
 postman Header: "Content-Type: application/json" og "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNTUzODEzMTc3LCJleHAiOjE1NTM4MTY3Nzd9.sTdHJE317Hh24iSnIIVrVlcfmsieQSIsN2P9H3QuS_4" Body: '{"image": "img15.jpg" sem file, "title": "Nammi", "price": 200, "description": "Rosa nice", "categoryid": 10}' http://localhost:3000/products
@@ -85,6 +85,40 @@ Skilar:
     }
 ]
 ```
+
+Notandi getur leitað að vöru með því að senda fyrirspurn GET á http://localhost:3000/products?category={beauty}&search={plastic%20chicken}
+
+```bash
+postman http://localhost:3000/products?category={beauty}&search={plastic%20chicken}
+Skilar:
+{
+    "limit": 10,
+    "offset": 0,
+    "pages": {
+        "_links": {
+          "self": {
+            "href": "https://hop1-vef2.herokuapp.com/products?offset=0&limit=10"
+           },
+          "next": {
+            "href": "https://hop1-vef2.herokuapp.com/products?offset=10&limit=10"
+          }
+        }
+      },
+    "items": [
+        {
+          "productid": 727,
+          "categoryid": 14,
+          "title": "Licensed Plastic Chicken",
+          "price": 408,
+          "description": "Accusamus deleniti in impedit ab laborum enim delectus.",
+          "image": "https://res.cloudinary.com/dmm36ptz3/image/upload/v1553861191/fovlqhfemtcouwbyiyai.jpg",
+          "created": "2019-03-29T12:07:38.276Z",
+          "categorytitle": "Beauty"
+        }
+    ]
+}
+```
+
 
 ## Innskráning
 
