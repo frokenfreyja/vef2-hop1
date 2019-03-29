@@ -66,6 +66,25 @@ Skilar:
 þar sem email er ekki á réttu formi
 ```
 
+Stjórnandi getur búið til nýja vöru með því að senda fyrirspurn POST á http://localhost:3000/products með token í Authorization sem Bearer token og upplýsingar um vöru í body sem form-data:
+
+```bash
+postman Header: "Content-Type: application/json" og "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNTUzODEzMTc3LCJleHAiOjE1NTM4MTY3Nzd9.sTdHJE317Hh24iSnIIVrVlcfmsieQSIsN2P9H3QuS_4" Body: '{"image": "img15.jpg" sem file, "title": "Nammi", "price": 200, "description": "Rosa nice", "categoryid": 10}' http://localhost:3000/products
+Skilar:
+[
+    {
+        "productid": 1003,
+        "categoryid": 10,
+        "title": "\"Nammi\"",
+        "price": 200,
+        "description": "\"Rosa nice\"",
+        "image": "https://res.cloudinary.com/dmm36ptz3/image/upload/v1553788777/wio9o2l3msx5kum3qij8.jpg",
+        "created": "2019-03-28T15:59:37.562Z",
+        "categorytitle": "Jewelery"
+    }
+]
+```
+
 ## Innskráning
 
 Stjórnandi: Admin er með netfangið 'admin@admin.is' og lykilorðið 'password'
